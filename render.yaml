@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: wechat-chat
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: DATA_DIR
+        value: "/app/data"
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

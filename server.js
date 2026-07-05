@@ -4,10 +4,12 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 const META_FILE = path.join(DATA_DIR, 'meta.json');
+const FRIENDS_FILE = path.join(DATA_DIR, 'friends.json');
+const FRIEND_REQUESTS_FILE = path.join(DATA_DIR, 'friend_requests.json');
 const POLL_INTERVAL = 2000;       // 客户端轮询间隔(毫秒)
 const EVENT_TTL = 120000;         // 事件保留时长(毫秒)，2分钟
 const MAX_EVENTS = 500;           // 每用户最多保留事件数
@@ -25,9 +27,11 @@ const MIME_TYPES = {
 };
 
 // ── 数据存储 ──────────────────────────────────────────────
-const users = new Map();       // userId → { id, nickname, avatarColor, online, lastSeen, lastSeq }
+const users = new Map();       // userId → { id, nickname, avatarColor, online, lastSeen }
 const eventQueues = new Map(); // userId → [{ seq, type, data, ts }]
 const messages = new Map();    // "userId1:userId2" → [...messages]
+const friends = new Map();     // userId → Set<friendId>  （双向好友关系）
+const friendRequests = new Map(); // userId → [{from, fromNickname, fromAvatarColor, to, status, timestamp}]
 let globalSeq = 0;
 let messageIdCounter = 0;
 let saveTimer = null;
@@ -55,7 +59,15 @@ function loadData() {
       globalSeq = meta.globalSeq || 0;
       messageIdCounter = meta.messageIdCounter || 0;
     }
-    console.log(`[持久化] 已加载 ${users.size} 个用户，${messages.size} 个会话`);
+    if (fs.existsSync(FRIENDS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(FRIENDS_FILE, 'utf8') || '[]');
+      data.forEach(([uid, fids]) => friends.set(uid, new Set(fids)));
+    }
+    if (fs.existsSync(FRIEND_REQUESTS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(FRIEND_REQUESTS_FILE, 'utf8') || '[]');
+      data.forEach(([uid, reqs]) => friendRequests.set(uid, reqs));
+    }
+    console.log(`[持久化] 已加载 ${users.size} 个用户，${messages.size} 个会话，${friends.size} 个好友关系`);
   } catch (e) {
     console.error('[持久化] 加载失败', e.message);
   }
@@ -67,6 +79,8 @@ function saveData() {
     fs.writeFileSync(USERS_FILE, JSON.stringify(Array.from(users.values())), 'utf8');
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(Array.from(messages.entries())), 'utf8');
     fs.writeFileSync(META_FILE, JSON.stringify({ globalSeq, messageIdCounter }), 'utf8');
+    fs.writeFileSync(FRIENDS_FILE, JSON.stringify(Array.from(friends.entries()).map(([k,v]) => [k, Array.from(v)])), 'utf8');
+    fs.writeFileSync(FRIEND_REQUESTS_FILE, JSON.stringify(Array.from(friendRequests.entries())), 'utf8');
   } catch (e) {
     console.error('[持久化] 保存失败', e.message);
   }
@@ -140,6 +154,53 @@ function setUserOffline(userId) {
     broadcast('user_offline', { userId });
     broadcast('users', { users: getOnlineUsers() });
   }
+}
+
+// ── 好友系统 ──────────────────────────────────────────────
+function areFriends(a, b) {
+  const set = friends.get(a);
+  return set && set.has(b);
+}
+
+function addFriendPair(a, b) {
+  if (!friends.has(a)) friends.set(a, new Set());
+  if (!friends.has(b)) friends.set(b, new Set());
+  friends.get(a).add(b);
+  friends.get(b).add(a);
+  scheduleSave();
+}
+
+function getFriendsList(userId) {
+  const set = friends.get(userId);
+  if (!set) return [];
+  return Array.from(set).map(fid => {
+    const u = users.get(fid);
+    return u ? { id: u.id, nickname: u.nickname, avatarColor: u.avatarColor, online: u.online } : null;
+  }).filter(Boolean);
+}
+
+function getPendingRequests(userId) {
+  // 发给 userId 的好友请求
+  const all = [];
+  friendRequests.forEach((reqs, fromUid) => {
+    reqs.forEach(r => {
+      if (r.to === userId && r.status === 'pending') {
+        all.push({ ...r, requestId: r.from + '_' + r.to + '_' + r.timestamp });
+      }
+    });
+  });
+  all.sort((a, b) => b.timestamp - a.timestamp);
+  return all;
+}
+
+function checkPendingRequest(fromUid, toUid) {
+  let found = false;
+  friendRequests.forEach((reqs) => {
+    reqs.forEach(r => {
+      if (r.from === fromUid && r.to === toUid && r.status === 'pending') found = true;
+    });
+  });
+  return found;
 }
 
 // ── HTTP 工具 ──────────────────────────────────────────────
@@ -251,7 +312,10 @@ async function handleApi(req, res, pathname, query) {
       timestamp: Date.now(),
     };
     if (!messages.has(chatKey)) messages.set(chatKey, []);
-    messages.get(chatKey).push(msg);
+    const chatMsgs = messages.get(chatKey);
+    chatMsgs.push(msg);
+    // 单个会话保留最近 5000 条，防止磁盘占满
+    while (chatMsgs.length > 5000) chatMsgs.shift();
 
     // 推事件给接收方
     pushEvent(body.to, 'message', { message: msg });
@@ -286,6 +350,132 @@ async function handleApi(req, res, pathname, query) {
   if (pathname === '/api/logout' && req.method === 'POST') {
     const body = await readBody(req);
     if (body.userId) setUserOffline(body.userId);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── 搜索用户 ──
+  if (pathname === '/api/search' && req.method === 'GET') {
+    const q = (query.q || '').trim().toLowerCase();
+    const selfId = query.userId;
+    if (!q || q.length < 1) { sendJson(res, 200, { ok: true, users: [] }); return; }
+    const results = [];
+    users.forEach((u, uid) => {
+      if (uid !== selfId && u.nickname.toLowerCase().includes(q)) {
+        results.push({
+          id: u.id, nickname: u.nickname, avatarColor: u.avatarColor, online: u.online,
+          isFriend: areFriends(selfId, uid),
+          hasPendingRequest: checkPendingRequest(selfId, uid)
+        });
+      }
+    });
+    results.sort((a, b) => (b.isFriend ? 1 : 0) - (a.isFriend ? 1 : 0));
+    sendJson(res, 200, { ok: true, users: results });
+    return;
+  }
+
+  // ── 发送好友请求 ──
+  if (pathname === '/api/friend/request' && req.method === 'POST') {
+    const body = await readBody(req);
+    const fromUser = users.get(body.from);
+    const toUser = users.get(body.to);
+    if (!fromUser || !toUser) { sendJson(res, 404, { error: '用户不存在' }); return; }
+    if (areFriends(body.from, body.to)) { sendJson(res, 400, { error: '已是好友' }); return; }
+
+    const reqObj = { from: body.from, fromNickname: fromUser.nickname, fromAvatarColor: fromUser.avatarColor, to: body.to, status: 'pending', timestamp: Date.now() };
+    if (!friendRequests.has(body.from)) friendRequests.set(body.from, []);
+    friendRequests.get(body.from).push(reqObj);
+    scheduleSave();
+
+    // 推送给目标用户
+    pushEvent(body.to, 'friend_request', reqObj);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── 接受好友请求 ──
+  if (pathname === '/api/friend/accept' && req.method === 'POST') {
+    const body = await readBody(req);
+    // 找到并更新请求状态
+    let found = false;
+    friendRequests.forEach((reqs, fromUid) => {
+      reqs.forEach(r => {
+        if (r.from === body.from && r.to === body.to && r.status === 'pending') {
+          r.status = 'accepted';
+          addFriendPair(body.from, body.to);
+          found = true;
+        }
+      });
+    });
+    if (!found) { sendJson(res, 404, { error: '请求不存在' }); return; }
+    scheduleSave();
+
+    const accepter = users.get(body.to);
+    pushEvent(body.from, 'friend_accepted', { from: body.to, fromNickname: accepter?.nickname, fromAvatarColor: accepter?.avatarColor });
+    // 通知双方刷新好友列表
+    pushEvent(body.from, 'friends_update', { friends: getFriendsList(body.from) });
+    pushEvent(body.to, 'friends_update', { friends: getFriendsList(body.to) });
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── 拒绝好友请求 ──
+  if (pathname === '/api/friend/reject' && req.method === 'POST') {
+    const body = await readBody(req);
+    friendRequests.forEach((reqs) => {
+      reqs.forEach(r => {
+        if (r.from === body.from && r.to === body.to && r.status === 'pending') r.status = 'rejected';
+      });
+    });
+    scheduleSave();
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── 好友列表 ──
+  if (pathname === '/api/friends' && req.method === 'GET') {
+    const userId = query.userId;
+    sendJson(res, 200, { ok: true, friends: getFriendsList(userId) });
+    return;
+  }
+
+  // ── 好友请求列表 ──
+  if (pathname === '/api/friend/requests' && req.method === 'GET') {
+    const userId = query.userId;
+    sendJson(res, 200, { ok: true, requests: getPendingRequests(userId) });
+    return;
+  }
+
+  // ── WebRTC 信令：发送 offer ──
+  if (pathname === '/api/call/offer' && req.method === 'POST') {
+    const body = await readBody(req);
+    const caller = users.get(body.from);
+    if (!caller) { sendJson(res, 401, {}); return; }
+    pushEvent(body.to, 'call_offer', { from: body.from, fromNickname: caller.nickname, fromAvatarColor: caller.avatarColor, sdp: body.sdp });
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── WebRTC 信令：发送 answer ──
+  if (pathname === '/api/call/answer' && req.method === 'POST') {
+    const body = await readBody(req);
+    pushEvent(body.to, 'call_answer', { from: body.from, sdp: body.sdp });
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── WebRTC 信令：ICE candidate ──
+  if (pathname === '/api/call/ice' && req.method === 'POST') {
+    const body = await readBody(req);
+    pushEvent(body.to, 'call_ice', { from: body.from, candidate: body.candidate });
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  // ── 挂断通话 ──
+  if (pathname === '/api/call/end' && req.method === 'POST') {
+    const body = await readBody(req);
+    pushEvent(body.to, 'call_end', { from: body.from });
     sendJson(res, 200, { ok: true });
     return;
   }

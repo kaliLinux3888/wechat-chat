@@ -2,5 +2,8 @@ node_modules/
 data/
 server.log
 server.pid
+tunnel.log
+tunnel.pid
+tunnel.url
 *.log
 .DS_Store

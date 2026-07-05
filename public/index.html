@@ -3,333 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>微信风格聊天</title>
+<title>Chat - 加好友 · 视频通话</title>
 <style>
-/* ====== CSS Reset & Variables ====== */
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --wechat-green: #07C160;
-  --wechat-green-dark: #06AD56;
-  --wechat-green-light: #2DC100;
-  --wechat-green-bg: #dff6e4;
-  --bg: #f5f5f5;
-  --bg-white: #ffffff;
-  --bg-sidebar: #f8f8f8;
-  --bg-chat: #ededed;
-  --text-primary: #191919;
-  --text-secondary: #999;
-  --text-muted: #b0b0b0;
-  --border: #e5e5e5;
-  --bubble-self: #95ec69;
-  --bubble-other: #ffffff;
-  --shadow: 0 1px 3px rgba(0,0,0,.08);
-  --radius: 8px;
-  --radius-lg: 12px;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  --transition: 0.2s ease;
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#07C160;--green-dark:#06AD56;--bg:#f5f5f5;--bg-white:#fff;
+  --bg-sidebar:#f8f8f8;--bg-chat:#ededed;--text:#191919;--text2:#999;
+  --text3:#b0b0b0;--border:#e5e5e5;--bubble-self:#95ec69;--transition:0.2s ease;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
 }
-html, body { height:100%; overflow:hidden; font-family:var(--font-family); background:var(--bg); color:var(--text-primary); font-size:14px; }
-button { font-family:inherit; cursor:pointer; border:none; outline:none; background:none; }
-input { font-family:inherit; outline:none; border:none; }
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
-::-webkit-scrollbar-thumb:hover { background:#aaa; }
-
-/* ====== Login Screen ====== */
-.login-container {
-  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(135deg, #07C160 0%, #06AD56 40%, #059b4b 100%);
-  z-index: 1000;
-}
-.login-card {
-  background:#fff; border-radius:16px; padding:48px 40px; width:380px;
-  box-shadow:0 20px 60px rgba(0,0,0,.15); text-align:center;
-}
-.login-card .logo {
-  width:64px; height:64px; background:var(--wechat-green); border-radius:16px;
-  margin:0 auto 16px; display:flex; align-items:center; justify-content:center;
-}
-.login-card .logo svg { width:36px; height:36px; fill:#fff; }
-.login-card h2 { font-size:24px; font-weight:600; margin-bottom:8px; }
-.login-card p { color:var(--text-secondary); font-size:13px; margin-bottom:28px; }
-.login-card .input-group {
-  position:relative; margin-bottom:16px; text-align:left;
-}
-.login-card .input-group label {
-  display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;
-}
-.login-card .input-group input {
-  width:100%; height:44px; border:1.5px solid var(--border); border-radius:10px;
-  padding:0 14px; font-size:15px; transition:border-color var(--transition);
-}
-.login-card .input-group input:focus { border-color:var(--wechat-green); }
-.login-card .btn-login {
-  width:100%; height:46px; background:var(--wechat-green); color:#fff;
-  border-radius:10px; font-size:16px; font-weight:500; margin-top:8px;
-  transition:background var(--transition);
-}
-.login-card .btn-login:hover { background:var(--wechat-green-dark); }
-.login-card .btn-login:active { transform:scale(.98); }
-.login-card .hint { margin-top:16px; font-size:12px; color:var(--text-muted); }
-
-/* ====== Main Layout ====== */
-.app { display:none; height:100vh; }
-.app.active { display:flex; }
-
-/* Sidebar */
-.sidebar {
-  width:300px; min-width:300px; background:var(--bg-sidebar);
-  border-right:1px solid var(--border); display:flex; flex-direction:column;
-}
-.sidebar-header {
-  height:60px; display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px; border-bottom:1px solid var(--border); flex-shrink:0;
-}
-.sidebar-header h3 { font-size:17px; font-weight:600; }
-.sidebar-header .my-avatar {
-  width:36px; height:36px; border-radius:8px; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:600; flex-shrink:0;
-}
-.sidebar-logo {
-  display:flex; align-items:center; gap:10px;
-}
-.sidebar-logo svg { width:28px; height:28px; fill:var(--wechat-green); }
-.search-box {
-  padding:12px 16px; flex-shrink:0;
-}
-.search-box input {
-  width:100%; height:36px; border-radius:6px; background:#e8e8e8;
-  padding:0 12px; font-size:13px; transition:background var(--transition);
-}
-.search-box input:focus { background:#fff; box-shadow:0 0 0 2px rgba(7,193,96,.2); }
-
-.contact-list { flex:1; overflow-y:auto; }
-.contact-item {
-  display:flex; align-items:center; padding:14px 20px; cursor:pointer;
-  transition:background var(--transition); position:relative;
-}
-.contact-item:hover { background:#e8e8e8; }
-.contact-item.active { background:#d9d9d9; }
-.contact-item .contact-avatar {
-  width:44px; height:44px; border-radius:6px; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:17px; font-weight:600; flex-shrink:0; margin-right:12px;
-}
-.contact-item .contact-info { flex:1; min-width:0; }
-.contact-item .contact-name {
-  font-size:14px; font-weight:500; margin-bottom:4px;
-  display:flex; align-items:center; gap:6px;
-}
-.contact-item .contact-last {
-  font-size:12px; color:var(--text-secondary); white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
-}
-.contact-item .contact-meta {
-  display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; margin-left:8px;
-}
-.contact-item .contact-time { font-size:11px; color:var(--text-muted); }
-.contact-item .contact-unread {
-  background:var(--wechat-green); color:#fff; font-size:11px; min-width:20px;
-  height:20px; border-radius:10px; display:none; align-items:center;
-  justify-content:center; padding:0 6px; margin-top:4px; font-weight:600;
-}
-.contact-item .contact-unread.show { display:flex; }
-.contact-item .online-dot {
-  width:8px; height:8px; border-radius:50%; background:var(--wechat-green);
-  flex-shrink:0;
-}
-
-/* Chat Area */
-.chat-area {
-  flex:1; display:flex; flex-direction:column; background:var(--bg-chat);
-}
-.chat-header {
-  height:60px; display:flex; align-items:center; padding:0 20px;
-  background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0;
-}
-.chat-header .chat-avatar {
-  width:36px; height:36px; border-radius:6px; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:600; margin-right:12px;
-}
-.chat-header .chat-title { font-size:16px; font-weight:600; }
-.chat-header .chat-subtitle {
-  font-size:12px; color:var(--text-secondary); margin-left:8px;
-}
-
-.chat-messages {
-  flex:1; overflow-y:auto; padding:20px;
-  display:flex; flex-direction:column; gap:2px;
-}
-
-/* Message Bubbles */
-.message-row { display:flex; margin-bottom:18px; align-items:flex-start; }
-.message-row.self { flex-direction:row-reverse; }
-.message-row .msg-avatar {
-  width:34px; height:34px; border-radius:4px; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:13px; font-weight:600; flex-shrink:0;
-}
-.message-row .msg-body { max-width:60%; display:flex; flex-direction:column; }
-.message-row.self .msg-body { align-items:flex-end; margin-right:10px; }
-.message-row.other .msg-body { margin-left:10px; align-items:flex-start; }
-.message-row .msg-bubble {
-  padding:10px 14px; font-size:14px; line-height:1.5; word-break:break-word;
-  position:relative; border-radius:8px;
-}
-.message-row.self .msg-bubble {
-  background:var(--bubble-self); border-top-right-radius:2px;
-}
-.message-row.other .msg-bubble {
-  background:var(--bubble-other); border-top-left-radius:2px; box-shadow:0 1px 1px rgba(0,0,0,.05);
-}
-.message-row .msg-time {
-  font-size:11px; color:var(--text-muted); margin-top:4px;
-}
-.message-row.system {
-  justify-content:center; margin:12px 0;
-}
-.message-row.system .msg-system-text {
-  font-size:12px; color:var(--text-muted); background:rgba(0,0,0,.05);
-  padding:4px 12px; border-radius:4px;
-}
-
-/* Typing Indicator */
-.typing-indicator {
-  padding:2px 20px 8px; font-size:12px; color:var(--text-secondary);
-  display:none; animation:typingPulse 1.5s infinite;
-}
-.typing-indicator.show { display:block; }
-@keyframes typingPulse { 0%,100%{opacity:.4;} 50%{opacity:1;} }
-
-/* Chat Input Bar */
-.chat-input-bar {
-  background:var(--bg-white); border-top:1px solid var(--border);
-  padding:10px 16px; display:flex; align-items:flex-end; gap:10px; flex-shrink:0;
-}
-.chat-input-bar .input-tool {
-  width:36px; height:36px; border-radius:6px; display:flex;
-  align-items:center; justify-content:center; transition:background var(--transition);
-  flex-shrink:0;
-}
-.chat-input-bar .input-tool:hover { background:#f0f0f0; }
-.chat-input-bar .input-tool svg { width:24px; height:24px; fill:#666; }
-.chat-input-bar textarea {
-  flex:1; height:40px; max-height:120px; border:none; resize:none;
-  font-size:14px; line-height:1.5; padding:6px 0; background:transparent;
-  font-family:var(--font-family);
-}
-.chat-input-bar textarea::placeholder { color:var(--text-muted); }
-.chat-input-bar .btn-send {
-  width:80px; height:36px; background:var(--wechat-green); color:#fff;
-  border-radius:6px; font-size:13px; font-weight:500; flex-shrink:0;
-  transition:all var(--transition);
-}
-.chat-input-bar .btn-send:hover { background:var(--wechat-green-dark); }
-.chat-input-bar .btn-send:active { transform:scale(.95); }
-.chat-input-bar .btn-send:disabled { background:#ccc; cursor:not-allowed; transform:none; }
-
-/* Emoji Picker */
-.emoji-picker {
-  display:none; background:var(--bg-white); border-top:1px solid var(--border);
-  padding:12px; flex-shrink:0; flex-wrap:wrap; gap:8px; justify-content:flex-start;
-  max-height:200px; overflow-y:auto;
-}
-.emoji-picker.show { display:flex; }
-.emoji-picker .emoji-item {
-  width:36px; height:36px; display:flex; align-items:center;
-  justify-content:center; font-size:22px; cursor:pointer; border-radius:6px;
-  transition:background var(--transition);
-}
-.emoji-picker .emoji-item:hover { background:#f5f5f5; }
-
-/* Welcome Screen */
-.welcome-screen {
-  flex:1; display:flex; flex-direction:column; align-items:center;
-  justify-content:center; background:var(--bg-chat); color:var(--text-muted);
-}
-.welcome-screen svg { width:80px; height:80px; fill:#d0d0d0; margin-bottom:16px; }
-.welcome-screen h3 { font-size:18px; font-weight:500; color:#999; }
-
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none}
+input{font-family:inherit;outline:none;border:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+/* Login */
+.login-container{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#07C160,#06AD56,#059b4b);z-index:1000}
+.login-card{background:#fff;border-radius:16px;padding:48px 40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.15);text-align:center}
+.login-card .logo{width:64px;height:64px;background:var(--green);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.login-card .logo svg{width:36px;height:36px;fill:#fff}
+.login-card h2{font-size:24px;font-weight:600;margin-bottom:8px}
+.login-card p{color:var(--text2);font-size:13px;margin-bottom:28px}
+.login-card .input-group{position:relative;margin-bottom:16px;text-align:left}
+.login-card .input-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px}
+.login-card .input-group input{width:100%;height:44px;border:1.5px solid var(--border);border-radius:10px;padding:0 14px;font-size:15px;transition:border-color var(--transition)}
+.login-card .input-group input:focus{border-color:var(--green)}
+.login-card .btn-login{width:100%;height:46px;background:var(--green);color:#fff;border-radius:10px;font-size:16px;font-weight:500;margin-top:8px}
+.login-card .btn-login:hover{background:var(--green-dark)}
+.login-card .btn-login:active{transform:scale(.98)}
+.login-card .hint{margin-top:16px;font-size:12px;color:var(--text3)}
+/* Layout */
+.app{display:none;height:100vh}
+.app.active{display:flex}
+.sidebar{width:320px;min-width:320px;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-header .my-avatar{width:34px;height:34px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.sidebar-logo{display:flex;align-items:center;gap:8px}
+.sidebar-logo svg{width:26px;height:26px;fill:var(--green)}
+.sidebar-logo h3{font-size:16px;font-weight:600}
+/* Tabs */
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-tab{flex:1;text-align:center;padding:12px 0;font-size:13px;color:var(--text2);position:relative;cursor:pointer;transition:color var(--transition)}
+.sidebar-tab:hover{color:var(--text)}
+.sidebar-tab.active{color:var(--green);font-weight:600}
+.sidebar-tab.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:var(--green);border-radius:2px}
+.sidebar-tab .tab-badge{background:#FA5151;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px;vertical-align:middle}
+/* Search */
+.search-box{padding:10px 16px;flex-shrink:0}
+.search-box input{width:100%;height:34px;border-radius:6px;background:#e8e8e8;padding:0 12px;font-size:13px;transition:all var(--transition)}
+.search-box input:focus{background:#fff;box-shadow:0 0 0 2px rgba(7,193,96,.2)}
+/* Contact List */
+.contact-list{flex:1;overflow-y:auto}
+.contact-item{display:flex;align-items:center;padding:12px 16px;cursor:pointer;transition:background var(--transition)}
+.contact-item:hover{background:#e8e8e8}
+.contact-item.active{background:#d9d9d9}
+.contact-item .contact-avatar{width:44px;height:44px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;flex-shrink:0;margin-right:12px}
+.contact-item .contact-info{flex:1;min-width:0}
+.contact-item .contact-name{font-size:14px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.contact-item .contact-last{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-item .contact-meta{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:8px}
+.contact-item .contact-time{font-size:11px;color:var(--text3)}
+.contact-item .contact-unread{background:var(--green);color:#fff;font-size:11px;min-width:20px;height:20px;border-radius:10px;display:none;align-items:center;justify-content:center;padding:0 6px;margin-top:3px;font-weight:600}
+.contact-item .contact-unread.show{display:flex}
+.contact-item .online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+/* Search results */
+.search-result{-webkit-appearance:none;display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0}
+.search-result .result-avatar{width:40px;height:40px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0;margin-right:12px}
+.search-result .result-info{flex:1}
+.search-result .result-name{font-size:14px;font-weight:500}
+.search-result .result-status{font-size:11px;color:var(--text3);margin-top:2px}
+.btn-add{height:30px;padding:0 14px;border-radius:15px;font-size:12px;font-weight:500;flex-shrink:0;transition:all var(--transition)}
+.btn-add.add{background:var(--green);color:#fff}
+.btn-add.add:hover{background:var(--green-dark)}
+.btn-add.pending{background:#f0f0f0;color:var(--text2);cursor:default}
+.btn-add.friend{background:#f0f0f0;color:var(--text2);cursor:default}
+/* Friend request */
+.request-card{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0}
+.request-card .req-avatar{width:40px;height:40px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0;margin-right:12px}
+.request-card .req-info{flex:1}
+.request-card .req-name{font-size:14px;font-weight:500}
+.request-card .req-text{font-size:12px;color:var(--text3);margin-top:2px}
+.request-card .req-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-accept{background:var(--green);color:#fff;height:30px;padding:0 16px;border-radius:4px;font-size:12px}
+.btn-accept:hover{background:var(--green-dark)}
+.btn-reject{background:#f0f0f0;color:var(--text2);height:30px;padding:0 16px;border-radius:4px;font-size:12px}
+/* Chat area */
+.chat-area{flex:1;display:flex;flex-direction:column;background:var(--bg-chat)}
+.chat-header{height:56px;display:flex;align-items:center;padding:0 16px;background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0}
+.chat-header .chat-avatar{width:36px;height:36px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-right:12px}
+.chat-header .chat-title{font-size:16px;font-weight:600}
+.chat-header .chat-subtitle{font-size:12px;color:var(--text2);margin-left:8px}
+.chat-header .header-actions{margin-left:auto;display:flex;align-items:center;gap:4px}
+.btn-video{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--transition)}
+.btn-video:hover{background:#f0f0f0}
+.btn-video svg{width:22px;height:22px;fill:#666}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:2px}
+.message-row{display:flex;margin-bottom:16px;align-items:flex-start;animation:msgIn .25s ease-out}
+.message-row.self{flex-direction:row-reverse}
+.message-row .msg-avatar{width:34px;height:34px;border-radius:4px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.message-row .msg-body{max-width:60%;display:flex;flex-direction:column}
+.message-row.self .msg-body{align-items:flex-end;margin-right:10px}
+.message-row.other .msg-body{margin-left:10px;align-items:flex-start}
+.message-row .msg-bubble{padding:10px 14px;font-size:14px;line-height:1.5;word-break:break-word;border-radius:8px}
+.message-row.self .msg-bubble{background:var(--bubble-self);border-top-right-radius:2px}
+.message-row.other .msg-bubble{background:#fff;border-top-left-radius:2px;box-shadow:0 1px 1px rgba(0,0,0,.05)}
+.message-row .msg-time{font-size:11px;color:var(--text3);margin-top:4px}
+.message-row.system{justify-content:center;margin:10px 0}
+.message-row.system .msg-system-text{font-size:12px;color:var(--text3);background:rgba(0,0,0,.05);padding:4px 12px;border-radius:4px}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.typing-indicator{padding:2px 20px 8px;font-size:12px;color:var(--text2);display:none;animation:typingPulse 1.5s infinite}
+.typing-indicator.show{display:block}
+@keyframes typingPulse{0%,100%{opacity:.4}50%{opacity:1}}
+.chat-input-bar{background:var(--bg-white);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:flex-end;gap:10px;flex-shrink:0}
+.chat-input-bar .input-tool{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--transition);flex-shrink:0}
+.chat-input-bar .input-tool:hover{background:#f0f0f0}
+.chat-input-bar .input-tool svg{width:24px;height:24px;fill:#666}
+.chat-input-bar textarea{flex:1;height:40px;max-height:120px;border:none;resize:none;font-size:14px;line-height:1.5;padding:6px 0;background:transparent;font-family:var(--font)}
+.chat-input-bar textarea::placeholder{color:var(--text3)}
+.chat-input-bar .btn-send{width:80px;height:36px;background:var(--green);color:#fff;border-radius:6px;font-size:13px;font-weight:500;flex-shrink:0}
+.chat-input-bar .btn-send:hover{background:var(--green-dark)}
+.chat-input-bar .btn-send:active{transform:scale(.95)}
+.chat-input-bar .btn-send:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.emoji-picker{display:none;background:var(--bg-white);border-top:1px solid var(--border);padding:12px;flex-shrink:0;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto}
+.emoji-picker.show{display:flex}
+.emoji-picker .emoji-item{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border-radius:6px}
+.emoji-picker .emoji-item:hover{background:#f5f5f5}
+/* Welcome */
+.welcome-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-chat);color:var(--text3)}
+.welcome-screen svg{width:80px;height:80px;fill:#d0d0d0;margin-bottom:16px}
+.welcome-screen h3{font-size:18px;font-weight:500;color:#999}
 /* Toast */
-.toast {
-  position:fixed; top:30px; left:50%; transform:translateX(-50%);
-  background:rgba(0,0,0,.75); color:#fff; padding:10px 24px;
-  border-radius:8px; font-size:13px; z-index:9999;
-  opacity:0; transition:opacity .3s; pointer-events:none;
-}
-.toast.show { opacity:1; }
-
-/* Badge animation */
-@keyframes badgePop { 0%{transform:scale(0);} 80%{transform:scale(1.2);} 100%{transform:scale(1);} }
-.contact-item .contact-unread.pop { animation:badgePop .35s ease-out; }
-
-/* Message animate in */
-@keyframes msgIn { from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
-.message-row { animation:msgIn .25s ease-out; }
-
+.toast{position:fixed;top:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+/* Video call */
+.video-call-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9990;flex-direction:column;align-items:center;justify-content:center}
+.video-call-overlay.active{display:flex}
+.video-call-overlay .call-info{color:#fff;font-size:18px;margin-bottom:16px;text-align:center}
+.video-call-overlay .call-sub{color:#aaa;font-size:13px;margin-top:6px;animation:typingPulse 2s infinite}
+.video-call-overlay .videos{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;max-width:90vw}
+.video-call-overlay video{width:320px;max-width:45vw;border-radius:12px;background:#222;object-fit:cover}
+.video-call-overlay video#localVideo{width:160px;position:absolute;bottom:20px;right:20px;border-radius:10px;border:2px solid rgba(255,255,255,.3);z-index:1}
+.call-actions{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:20px}
+.call-actions button{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all var(--transition)}
+.call-actions button svg{width:28px;height:28px;fill:#fff}
+.btn-hangup{background:#FA5151}
+.btn-hangup:hover{background:#d43d3d}
+.btn-mute{background:rgba(255,255,255,.2)}
+.btn-mute.muted{background:#fff}
+.btn-mute.muted svg{fill:#333}
+/* Incoming call toast */
+.incoming-call{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#fff;border-radius:16px;padding:24px 32px;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:9980;display:none;text-align:center}
+.incoming-call.show{display:block}
+.incoming-call .incoming-name{font-size:18px;font-weight:600;margin-bottom:4px}
+.incoming-call .incoming-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.incoming-call .incoming-actions{display:flex;gap:16px;justify-content:center}
+.incoming-call .btn-accept-call{width:56px;height:56px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center}
+.incoming-call .btn-reject-call{width:56px;height:56px;border-radius:50%;background:#FA5151;display:flex;align-items:center;justify-content:center}
+.incoming-call svg{width:28px;height:28px;fill:#fff}
+/* Tab panels */
+.tab-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
+.tab-panel.active{display:flex}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text3);text-align:center}
+.empty-state svg{width:48px;height:48px;fill:#d0d0d0;margin-bottom:12px}
+.empty-state p{font-size:13px}
 /* Responsive */
-@media (max-width: 768px) {
-  .sidebar { width:100%; min-width:100%; }
-  .chat-area { display:none; position:fixed; inset:0; }
-  .chat-area.mobile-active { display:flex; z-index:50; }
-  .sidebar.mobile-hidden { display:none; }
-  .chat-header .btn-back {
-    display:flex !important; width:32px; height:32px; align-items:center;
-    justify-content:center; margin-right:8px;
-  }
+@media(max-width:768px){
+  .sidebar{width:100%;min-width:100%}
+  .chat-area{display:none;position:fixed;inset:0}
+  .chat-area.mobile-active{display:flex;z-index:50}
+  .sidebar.mobile-hidden{display:none}
+  .chat-header .btn-back{display:flex!important;width:32px;height:32px;align-items:center;justify-content:center;margin-right:8px}
 }
-@media (min-width: 769px) {
-  .chat-header .btn-back { display:none; }
-}
+@media(min-width:769px){.chat-header .btn-back{display:none}}
 </style>
 </head>
 <body>
 
-<!-- ====== 登录界面 ====== -->
+<!-- 登录 -->
 <div class="login-container" id="loginScreen">
   <div class="login-card">
-    <div class="logo">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-    </div>
-    <h2>欢迎使用聊天</h2>
-    <p>微信风格 · 即时通讯</p>
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
+    <h2>Chat</h2>
+    <p>加好友 · 聊天 · 视频通话</p>
     <div class="input-group">
       <label>你的昵称</label>
       <input type="text" id="nicknameInput" placeholder="请输入你的昵称" maxlength="20" autocomplete="off">
     </div>
     <button class="btn-login" onclick="login()">进入聊天</button>
-    <p class="hint">💡 用多个窗口打开就可以体验多人聊天</p>
+    <p class="hint">💡 搜索好友名字，加好友后就能聊天和视频通话</p>
   </div>
 </div>
 
-<!-- ====== 主界面 ====== -->
+<!-- 主界面 -->
 <div class="app" id="app">
-  <!-- 侧边栏 -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        <h3>微信</h3>
+        <h3>Chat</h3>
       </div>
       <div class="my-avatar" id="myAvatarSmall">我</div>
     </div>
-    <div class="search-box">
-      <input type="text" placeholder="🔍 搜索聊天" id="searchInput" oninput="filterContacts()">
+    <!-- 标签切换 -->
+    <div class="sidebar-tabs">
+      <div class="sidebar-tab active" data-tab="messages" onclick="switchTab('messages')">消息</div>
+      <div class="sidebar-tab" data-tab="contacts" onclick="switchTab('contacts')">通讯录</div>
+      <div class="sidebar-tab" data-tab="requests" onclick="switchTab('requests')">新的朋友<span class="tab-badge" id="requestBadge" style="display:none">0</span></div>
     </div>
-    <div class="contact-list" id="contactList"></div>
+    <!-- 消息面板 -->
+    <div class="tab-panel active" id="panel-messages">
+      <div class="search-box">
+        <input type="text" placeholder="🔍 搜索好友" id="friendSearchInput" oninput="filterFriends()">
+      </div>
+      <div class="contact-list" id="friendList"></div>
+    </div>
+    <!-- 通讯录面板 -->
+    <div class="tab-panel" id="panel-contacts">
+      <div class="search-box">
+        <input type="text" placeholder="🔍 搜索用户，加好友" id="userSearchInput" oninput="searchUsers()">
+      </div>
+      <div id="searchResults"></div>
+      <div class="empty-state" id="contactEmpty">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <p>输入昵称搜索用户，添加好友</p>
+      </div>
+    </div>
+    <!-- 好友请求面板 -->
+    <div class="tab-panel" id="panel-requests">
+      <div id="requestList"></div>
+      <div class="empty-state" id="requestEmpty">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <p>暂无好友请求</p>
+      </div>
+    </div>
   </aside>
 
-  <!-- 聊天区域 -->
   <main class="chat-area" id="chatArea">
-    <!-- 占位 -->
     <div class="welcome-screen" id="welcomeScreen">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
-      <h3>选择联系人开始聊天</h3>
+      <h3>选择好友开始聊天</h3>
     </div>
-    <!-- 聊天界面 -->
     <div id="chatView" style="display:none;flex:1;display:flex;flex-direction:column;">
       <div class="chat-header">
         <button class="btn-back" onclick="goBack()">
@@ -339,6 +253,11 @@ input { font-family:inherit; outline:none; border:none; }
         <div>
           <div class="chat-title" id="chatTitle"></div>
           <div class="chat-subtitle" id="chatSubtitle"></div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-video" onclick="startCall()" title="视频通话" id="btnVideoCall">
+            <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+          </button>
         </div>
       </div>
       <div class="chat-messages" id="chatMessages"></div>
@@ -358,517 +277,457 @@ input { font-family:inherit; outline:none; border:none; }
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- 来电提示 -->
+<div class="incoming-call" id="incomingCall">
+  <div class="incoming-name" id="incomingName"></div>
+  <div class="incoming-sub">视频通话邀请</div>
+  <div class="incoming-actions">
+    <button class="btn-reject-call" onclick="rejectCall()"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></button>
+    <button class="btn-accept-call" onclick="acceptCall()"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></button>
+  </div>
+</div>
+
+<!-- 视频通话 -->
+<div class="video-call-overlay" id="videoCallOverlay">
+  <div class="call-info">
+    <div id="callPeerName"></div>
+    <div class="call-sub" id="callStatus">正在连接...</div>
+  </div>
+  <div class="videos">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+  </div>
+  <div class="call-actions">
+    <button class="btn-mute" id="btnMute" onclick="toggleMute()"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+    <button class="btn-hangup" onclick="endCall()"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" transform="rotate(135,12,12)"/></svg></button>
+  </div>
+</div>
+
 <script>
 /* ====== 全局状态 ====== */
-let myUser = null;
-let pollTimer = null;
-let lastSeq = 0;
-let activeChat = null;
-const onlineUsers = new Map();       // userId -> user info
-const chatHistories = new Map();     // userId -> messages[]
-const unreadCounts = new Map();      // userId -> number
-const typingUsers = new Map();       // userId -> timer
-const EMOJI_LIST = [
+let myUser=null,activeChat=null,pollTimer=null,lastSeq=0,activeTab='messages';
+const friendsMap=new Map();       // userId → {id,nickname,avatarColor,online}
+const chatHistories=new Map();    // userId → messages[]
+const unreadCounts=new Map();     // userId → number
+let pendingRequests=[];
+let callState=null; // null | {peerId,peerName,peerConnection,localStream,isCaller,muted}
+const EMOJI_LIST=[
   '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰','😗',
   '😚','😇','🙂','🤗','🤩','😏','😌','😛','😜','😝','🤑','🤔','🤐','😐','😑','😶',
-  '🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','🤤','😒','😓','😕','🙃',
-  '🤑','😲','☹️','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬',
-  '😰','😱','🥵','🥶','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','😈',
-  '👿','💀','☠️','💩','🤡','👻','👽','🤖','😺','😸','😹','😻','❤️','🧡','💛','💚',
-  '💙','💜','🖤','🤍','🤎','💔','💕','💖','💗','💓','💞','👍','👎','👏','🙌','🤝',
-  '💪','🤲','👐','🙏','✌️','🤞','👌','🤏','👋','🤚','🖐','✋','🦾','🎉','🎊','✨',
+  '🙄','😣','😥','😮','😯','😪','😫','😴','😌','🤤','😒','😓','😕','🙃','😲','😖',
+  '😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳',
+  '🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','😈','👿','💀','🤡','👻','👽',
+  '🤖','❤️','🧡','💛','💚','💙','💜','🖤','💕','💖','💗','👍','👎','👏','🙌','🤝',
+  '💪','🙏','✌️','👌','👋','🖐','✋','🎉','🎊','✨',
 ];
+const RTC_CONFIG={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
 
-/* ====== 连接 (短轮询 · 远程可用) ====== */
-async function connect() {
-  try {
-    // 1. 登录，获取正式 userId
-    const loginRes = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: myUser.nickname, userId: myUser.id }),
-    });
-    const loginData = await loginRes.json();
-    if (!loginData.ok) { showToast('登录失败'); return; }
-    myUser = loginData.user;
-    localStorage.setItem('chat_user_id', myUser.id);
-    localStorage.setItem('chat_nickname', myUser.nickname);
+/* ====== 连接与轮询 ====== */
+async function connect(){
+  try{
+    const loginRes=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nickname:myUser.nickname,userId:myUser.id})});
+    const loginData=await loginRes.json();
+    if(!loginData.ok){showToast('登录失败');return}
+    myUser=loginData.user;
+    localStorage.setItem('chat_user_id',myUser.id);
+    localStorage.setItem('chat_nickname',myUser.nickname);
     updateMyAvatar();
     showToast(`欢迎，${myUser.nickname}！`);
-
-    // 2. 立即拉取一次，然后启动轮询
-    lastSeq = 0;
+    lastSeq=0;
     await poll();
     startPolling();
-  } catch (err) {
-    showToast('网络错误，3秒后重连...');
-    setTimeout(connect, 3000);
+    loadFriends();
+    loadRequests();
+  }catch(err){showToast('网络错误，3秒后重连...');setTimeout(connect,3000)}
+}
+async function poll(){
+  if(!myUser)return;
+  try{
+    const res=await fetch(`/api/poll?userId=${myUser.id}&since=${lastSeq}`);
+    const data=await res.json();
+    if(!data.ok)return;
+    (data.events||[]).forEach(evt=>{lastSeq=Math.max(lastSeq,evt.seq);handleEvent(evt)});
+  }catch(e){}
+}
+function startPolling(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(poll,2000)}
+function handleEvent(evt){
+  switch(evt.type){
+    case'message':addMessageToChat(evt.data.message);break;
+    case'typing':handleTyping(evt.data);break;
+    case'user_online':case'user_offline':loadFriends();if(activeChat)updateChatHeader();break;
+    case'friend_request':loadRequests();showToast(`${evt.data.fromNickname} 请求加你为好友`);break;
+    case'friend_accepted':loadFriends();showToast(`${evt.data.fromNickname} 已接受好友请求`);break;
+    case'friends_update':loadFriends();break;
+    case'call_offer':handleCallOffer(evt.data);break;
+    case'call_answer':handleCallAnswer(evt.data);break;
+    case'call_ice':handleCallICE(evt.data);break;
+    case'call_end':handleCallEnd();break;
   }
 }
 
-async function poll() {
-  if (!myUser) return;
-  try {
-    const res = await fetch(`/api/poll?userId=${myUser.id}&since=${lastSeq}`);
-    const data = await res.json();
-    if (!data.ok) return;
-
-    // 更新在线用户列表
-    onlineUsers.clear();
-    (data.onlineUsers || []).forEach(u => onlineUsers.set(u.id, u));
-    renderContactList();
-
-    // 处理增量事件
-    (data.events || []).forEach(evt => {
-      lastSeq = Math.max(lastSeq, evt.seq);
-      handleEvent(evt);
-    });
-  } catch (err) {
-    // 网络抖动，下次重试
-  }
+/* ====== 标签切换 ====== */
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
+  if(tab==='contacts')document.getElementById('userSearchInput').focus();
+  if(tab==='requests')loadRequests();
 }
 
-function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(poll, 2000);
-}
-
-function handleEvent(evt) {
-  switch (evt.type) {
-    case 'message':
-      addMessageToChat(evt.data.message);
-      break;
-    case 'typing':
-      handleTypingIndicator(evt.data);
-      break;
-    case 'user_online':
-      // 用户列表已在 poll 中更新，这里仅刷新头部
-      if (activeChat) updateChatHeader();
-      break;
-    case 'user_offline':
-      if (activeChat) updateChatHeader();
-      break;
-  }
-}
-
-// 页面关闭时尽力上报离线
-window.addEventListener('beforeunload', () => {
-  if (myUser) {
-    navigator.sendBeacon('/api/logout', JSON.stringify({ userId: myUser.id }));
-  }
-});
-
-// 页面可见性变化：切回时立即轮询
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && myUser) poll();
-});
-
-/* ====== HTTP API 封装 ====== */
-async function apiPost(path, body) {
-  try {
-    const res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return await res.json();
-  } catch (e) { return { ok: false, error: e.message }; }
-}
-
-async function fetchHistory(userId) {
-  try {
-    const res = await fetch(`/api/history?userId=${myUser.id}&with=${userId}`);
-    const data = await res.json();
-    if (data.ok) {
-      chatHistories.set(data.with, data.messages);
-      renderMessages(data.with);
+/* ====== 好友列表 ====== */
+async function loadFriends(){
+  try{
+    const res=await fetch(`/api/friends?userId=${myUser.id}`);
+    const data=await res.json();
+    if(data.ok){
+      friendsMap.clear();
+      data.friends.forEach(f=>friendsMap.set(f.id,f));
+      renderFriendList();
     }
-  } catch (e) {}
+  }catch(e){}
 }
-
-/* ====== 登录 ====== */
-function login() {
-  const input = document.getElementById('nicknameInput');
-  const nickname = input.value.trim();
-  if (!nickname) {
-    input.focus();
-    input.style.borderColor = '#FA5151';
-    setTimeout(() => input.style.borderColor = '', 1500);
+function renderFriendList(){
+  const c=document.getElementById('friendList');
+  const q=(document.getElementById('friendSearchInput')?.value||'').toLowerCase();
+  let entries=Array.from(friendsMap.values());
+  if(q)entries=entries.filter(f=>f.nickname.toLowerCase().includes(q));
+  entries.sort((a,b)=>{
+    const au=unreadCounts.get(a.id)||0,bu=unreadCounts.get(b.id)||0;
+    return bu-au;
+  });
+  if(entries.length===0){
+    c.innerHTML='<div class="empty-state"><p>还没有好友，去「通讯录」搜索添加吧</p></div>';
     return;
   }
-
-  const savedId = localStorage.getItem('chat_user_id');
-  myUser = { id: savedId, nickname };
-
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').classList.add('active');
-
-  connect();
-}
-
-/* ====== 联系人列表 ====== */
-function renderContactList() {
-  const container = document.getElementById('contactList');
-  const searchText = (document.getElementById('searchInput').value || '').toLowerCase();
-
-  let entries = Array.from(onlineUsers.values());
-  // 也添加有聊天历史但不在线的用户
-  chatHistories.forEach((msgs, userId) => {
-    if (!onlineUsers.has(userId)) {
-      const lastMsg = msgs[msgs.length - 1];
-      entries.push({ id: userId, nickname: lastMsg?.fromNickname || '用户', avatarColor: '#ccc', online: false, _fromHistory: true });
-    }
-  });
-
-  // 去重
-  const seen = new Set();
-  entries = entries.filter(u => {
-    if (seen.has(u.id)) return false;
-    seen.add(u.id);
-    return true;
-  });
-
-  // 搜索过滤
-  if (searchText) {
-    entries = entries.filter(u => u.nickname.toLowerCase().includes(searchText));
-  }
-
-  // 排序：有未读的在前，按最后消息时间
-  entries.sort((a, b) => {
-    const aUnread = unreadCounts.get(a.id) || 0;
-    const bUnread = unreadCounts.get(b.id) || 0;
-    if (aUnread && !bUnread) return -1;
-    if (!aUnread && bUnread) return 1;
-    return 0;
-  });
-
-  if (entries.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#b0b0b0;font-size:13px;">暂无联系人，让朋友也打开这个页面吧</div>';
-    return;
-  }
-
-  container.innerHTML = entries.map(u => {
-    const lastMsg = getLastMessage(u.id);
-    const unread = unreadCounts.get(u.id) || 0;
-    const isActive = activeChat === u.id;
-    return `
-      <div class="contact-item ${isActive ? 'active' : ''}" onclick="openChat('${u.id}')" data-userid="${u.id}">
-        <div class="contact-avatar" style="background:${u.avatarColor}">${u.nickname[0]}</div>
-        <div class="contact-info">
-          <div class="contact-name">
-            ${escapeHtml(u.nickname)}
-            ${u.online !== false ? '<span class="online-dot"></span>' : ''}
-          </div>
-          <div class="contact-last">${lastMsg ? lastMsg.text : ''}</div>
-        </div>
-        <div class="contact-meta">
-          <span class="contact-time">${lastMsg ? formatTime(lastMsg.timestamp) : ''}</span>
-          <span class="contact-unread ${unread > 0 ? 'show' : ''}">${unread > 99 ? '99+' : unread}</span>
-        </div>
-      </div>
-    `;
+  c.innerHTML=entries.map(f=>{
+    const lastMsg=getLastMessage(f.id),unread=unreadCounts.get(f.id)||0;
+    return`<div class="contact-item${activeChat===f.id?' active':''}" onclick="openChat('${f.id}')">
+      <div class="contact-avatar" style="background:${f.avatarColor}">${f.nickname[0]}</div>
+      <div class="contact-info"><div class="contact-name">${esc(f.nickname)}${f.online?' <span class="online-dot"></span>':''}</div><div class="contact-last">${lastMsg?lastMsg.text:''}</div></div>
+      <div class="contact-meta"><span class="contact-time">${lastMsg?formatTime(lastMsg.timestamp):''}</span><span class="contact-unread${unread>0?' show':''}">${unread>99?'99+':unread}</span></div>
+    </div>`;
   }).join('');
 }
+function filterFriends(){renderFriendList()}
+function getLastMessage(uid){const h=chatHistories.get(uid)||[];return h[h.length-1]||null}
 
-function filterContacts() {
-  renderContactList();
+/* ====== 搜索用户 ====== */
+let searchTimer=null;
+async function searchUsers(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(async()=>{
+    const q=document.getElementById('userSearchInput').value.trim();
+    const r=document.getElementById('searchResults');
+    const e=document.getElementById('contactEmpty');
+    if(!q){r.innerHTML='';e.style.display='flex';return}
+    e.style.display='none';
+    try{
+      const res=await fetch(`/api/search?userId=${myUser.id}&q=${encodeURIComponent(q)}`);
+      const data=await res.json();
+      if(!data.ok||data.users.length===0){r.innerHTML='<div class="empty-state"><p>未找到用户</p></div>';return}
+      r.innerHTML=data.users.map(u=>{
+        let btn='';
+        if(u.isFriend)btn='<button class="btn-add friend">已是好友</button>';
+        else if(u.hasPendingRequest)btn='<button class="btn-add pending">已发送</button>';
+        else btn=`<button class="btn-add add" onclick="sendFriendRequest('${u.id}')">加好友</button>`;
+        return`<div class="search-result">
+          <div class="result-avatar" style="background:${u.avatarColor}">${u.nickname[0]}</div>
+          <div class="result-info"><div class="result-name">${esc(u.nickname)}</div><div class="result-status">${u.online?'在线':'离线'}</div></div>
+          ${btn}
+        </div>`;
+      }).join('');
+    }catch(e){}
+  },300);
+}
+async function sendFriendRequest(toId){
+  try{
+    const res=await apiPost('/api/friend/request',{from:myUser.id,to:toId});
+    if(res.ok)showToast('好友请求已发送');
+    else showToast(res.error||'发送失败');
+    searchUsers();
+  }catch(e){}
 }
 
-function getLastMessage(userId) {
-  const history = chatHistories.get(userId) || [];
-  return history[history.length - 1] || null;
+/* ====== 好友请求 ====== */
+async function loadRequests(){
+  try{
+    const res=await fetch(`/api/friend/requests?userId=${myUser.id}`);
+    const data=await res.json();
+    if(data.ok){
+      pendingRequests=data.requests||[];
+      renderRequests();
+      const badge=document.getElementById('requestBadge');
+      const cnt=pendingRequests.length;
+      badge.textContent=cnt;
+      badge.style.display=cnt>0?'inline-flex':'none';
+    }
+  }catch(e){}
+}
+function renderRequests(){
+  const c=document.getElementById('requestList');
+  const e=document.getElementById('requestEmpty');
+  if(pendingRequests.length===0){c.innerHTML='';e.style.display='flex';return}
+  e.style.display='none';
+  c.innerHTML=pendingRequests.map(r=>`<div class="request-card">
+    <div class="req-avatar" style="background:${r.fromAvatarColor||'#ccc'}">${(r.fromNickname||'?')[0]}</div>
+    <div class="req-info"><div class="req-name">${esc(r.fromNickname)}</div><div class="req-text">请求添加你为好友</div></div>
+    <div class="req-actions">
+      <button class="btn-accept" onclick="acceptRequest('${r.from}','${r.to}')">接受</button>
+      <button class="btn-reject" onclick="rejectRequest('${r.from}','${r.to}')">拒绝</button>
+    </div>
+  </div>`).join('');
+}
+async function acceptRequest(from,to){
+  await apiPost('/api/friend/accept',{from,to});
+  loadRequests();loadFriends();
+}
+async function rejectRequest(from,to){
+  await apiPost('/api/friend/reject',{from,to});
+  loadRequests();
 }
 
-/* ====== 打开聊天 ====== */
-function openChat(userId) {
-  activeChat = userId;
-  unreadCounts.set(userId, 0);
-
-  const sidebar = document.getElementById('sidebar');
-  const chatArea = document.getElementById('chatArea');
-  const welcomeScreen = document.getElementById('welcomeScreen');
-  const chatView = document.getElementById('chatView');
-
-  // 移动端视图切换
-  if (window.innerWidth <= 768) {
-    sidebar.classList.add('mobile-hidden');
-    chatArea.classList.add('mobile-active');
-  }
-
-  welcomeScreen.style.display = 'none';
-  chatView.style.display = 'flex';
-
-  updateChatHeader();
-  requestHistory(userId);
-  renderContactList();
-
-  // 隐藏输入状态
+/* ====== 聊天 ====== */
+function openChat(userId){
+  activeChat=userId;unreadCounts.set(userId,0);
+  const sb=document.getElementById('sidebar'),ca=document.getElementById('chatArea');
+  if(window.innerWidth<=768){sb.classList.add('mobile-hidden');ca.classList.add('mobile-active')}
+  document.getElementById('welcomeScreen').style.display='none';
+  document.getElementById('chatView').style.display='flex';
+  updateChatHeader();requestHistory(userId);renderFriendList();
   document.getElementById('typingIndicator').classList.remove('show');
-  // 关闭表情
   document.getElementById('emojiPicker').classList.remove('show');
-
-  // 滚动到底部
-  setTimeout(() => scrollToBottom(), 100);
-
+  setTimeout(()=>scrollToBottom(),100);
   document.getElementById('messageInput').focus();
 }
-
-function updateChatHeader() {
-  if (!activeChat) return;
-  const user = onlineUsers.get(activeChat);
-  // try history
-  let info = user;
-  if (!info) {
-    chatHistories.forEach((msgs, uid) => {
-      if (uid === activeChat && msgs.length > 0) {
-        const m = msgs[msgs.length - 1];
-        info = { id: uid, nickname: m.fromNickname || m.from, avatarColor: m.fromAvatarColor || '#ccc', online: false };
-      }
-    });
-  }
-
-  document.getElementById('chatAvatar').style.background = info?.avatarColor || '#ccc';
-  document.getElementById('chatAvatar').textContent = (info?.nickname || '?')[0];
-  document.getElementById('chatTitle').textContent = info?.nickname || '未知用户';
-  document.getElementById('chatSubtitle').textContent = (info?.online !== false) ? '在线' : '离线';
-}
-
-function goBack() {
-  const sidebar = document.getElementById('sidebar');
-  const chatArea = document.getElementById('chatArea');
-  sidebar.classList.remove('mobile-hidden');
-  chatArea.classList.remove('mobile-active');
-  activeChat = null;
-  document.getElementById('welcomeScreen').style.display = 'flex';
-  document.getElementById('chatView').style.display = 'none';
-}
-
-function requestHistory(userId) {
-  const history = chatHistories.get(userId);
-  if (!history || history.length === 0) {
-    fetchHistory(userId);
-  } else {
-    renderMessages(userId);
+function updateChatHeader(){
+  if(!activeChat)return;
+  const u=friendsMap.get(activeChat);
+  if(u){
+    document.getElementById('chatAvatar').style.background=u.avatarColor;
+    document.getElementById('chatAvatar').textContent=u.nickname[0];
+    document.getElementById('chatTitle').textContent=u.nickname;
+    document.getElementById('chatSubtitle').textContent=u.online?'在线':'离线';
+    document.getElementById('btnVideoCall').style.display='flex';
   }
 }
-
-/* ====== 渲染消息 ====== */
-function renderMessages(userId) {
-  const container = document.getElementById('chatMessages');
-  const messages = chatHistories.get(userId) || [];
-  container.innerHTML = messages.map(m => renderMessageBubble(m)).join('');
+function goBack(){
+  document.getElementById('sidebar').classList.remove('mobile-hidden');
+  document.getElementById('chatArea').classList.remove('mobile-active');
+  activeChat=null;
+  document.getElementById('welcomeScreen').style.display='flex';
+  document.getElementById('chatView').style.display='none';
+}
+function requestHistory(uid){
+  const h=chatHistories.get(uid);
+  if(!h||h.length===0)fetchHistory(uid);else renderMessages(uid);
+}
+async function fetchHistory(uid){
+  try{
+    const res=await fetch(`/api/history?userId=${myUser.id}&with=${uid}`);
+    const data=await res.json();
+    if(data.ok){chatHistories.set(data.with,data.messages);renderMessages(data.with)}
+  }catch(e){}
+}
+function renderMessages(uid){
+  const msgs=chatHistories.get(uid)||[];
+  document.getElementById('chatMessages').innerHTML=msgs.map(m=>{
+    if(m.type==='system')return`<div class="message-row system"><span class="msg-system-text">${esc(m.text)}</span></div>`;
+    const isSelf=m.from===myUser.id;
+    const t=new Date(m.timestamp);
+    const ts=`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+    return`<div class="message-row ${isSelf?'self':'other'}">
+      <div class="msg-avatar" style="background:${m.fromAvatarColor||'#ccc'}">${(m.fromNickname||'?')[0]}</div>
+      <div class="msg-body"><div class="msg-bubble">${esc(m.text)}</div><span class="msg-time">${ts}</span></div>
+    </div>`;
+  }).join('');
   scrollToBottom();
 }
-
-function renderMessageBubble(m) {
-  if (m.type === 'system') {
-    return `<div class="message-row system"><span class="msg-system-text">${escapeHtml(m.text)}</span></div>`;
+function addMessageToChat(msg){
+  const uid=msg.from===myUser.id?msg.to:msg.from;
+  if(!chatHistories.has(uid))chatHistories.set(uid,[]);
+  const hist=chatHistories.get(uid);
+  if(hist.some(m=>m.id===msg.id))return;
+  hist.push(msg);
+  if(msg.from!==myUser.id&&activeChat!==uid){
+    const cnt=(unreadCounts.get(uid)||0)+1;unreadCounts.set(uid,cnt);
   }
-  const isSelf = m.from === myUser.id;
-  const time = new Date(m.timestamp);
-  const timeStr = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
-  return `
-    <div class="message-row ${isSelf ? 'self' : 'other'}">
-      <div class="msg-avatar" style="background:${m.fromAvatarColor || '#ccc'}">${(m.fromNickname || '?')[0]}</div>
-      <div class="msg-body">
-        <div class="msg-bubble">${escapeHtml(m.text)}</div>
-        <span class="msg-time">${timeStr}</span>
-      </div>
-    </div>
-  `;
-}
-
-function addMessageToChat(message) {
-  const chatUserId = message.from === myUser.id ? message.to : message.from;
-  if (!chatHistories.has(chatUserId)) {
-    chatHistories.set(chatUserId, []);
-  }
-  // 去重：避免本地乐观显示与服务器回显重复
-  const history = chatHistories.get(chatUserId);
-  if (history.some(m => m.id === message.id)) {
-    return;
-  }
-  history.push(message);
-
-  // 更新未读
-  if (message.from !== myUser.id && activeChat !== chatUserId) {
-    const count = (unreadCounts.get(chatUserId) || 0) + 1;
-    unreadCounts.set(chatUserId, count);
-  }
-
-  if (activeChat === chatUserId) {
-    // 追加到界面
-    const container = document.getElementById('chatMessages');
-    container.insertAdjacentHTML('beforeend', renderMessageBubble(message));
+  if(activeChat===uid){
+    document.getElementById('chatMessages').insertAdjacentHTML('beforeend',renderMsgBubble(msg));
     scrollToBottom();
   }
-
-  renderContactList();
+  renderFriendList();
 }
-
-/* ====== 输入状态 ====== */
-function handleTypingIndicator(data) {
-  if (activeChat === data.from) {
-    const el = document.getElementById('typingIndicator');
-    if (data.isTyping) {
-      el.classList.add('show');
-      clearTimeout(typingUsers.get(data.from));
-      typingUsers.set(data.from, setTimeout(() => {
-        el.classList.remove('show');
-      }, 3000));
-    } else {
-      el.classList.remove('show');
-    }
+function renderMsgBubble(m){
+  const isSelf=m.from===myUser.id;
+  const t=new Date(m.timestamp);
+  const ts=`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+  return`<div class="message-row ${isSelf?'self':'other'}">
+    <div class="msg-avatar" style="background:${m.fromAvatarColor||'#ccc'}">${(m.fromNickname||'?')[0]}</div>
+    <div class="msg-body"><div class="msg-bubble">${esc(m.text)}</div><span class="msg-time">${ts}</span></div>
+  </div>`;
+}
+function handleTyping(data){
+  if(activeChat===data.from){
+    const el=document.getElementById('typingIndicator');
+    if(data.isTyping)el.classList.add('show');else el.classList.remove('show');
   }
 }
-
-let typingTimeout = null;
-document.getElementById('messageInput').addEventListener('input', () => {
-  if (!activeChat) return;
-  apiPost('/api/typing', { from: myUser.id, to: activeChat, isTyping: true });
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => {
-    apiPost('/api/typing', { from: myUser.id, to: activeChat, isTyping: false });
-  }, 1000);
-});
 
 /* ====== 发送消息 ====== */
-async function sendMessage() {
-  if (!activeChat) return;
-  const input = document.getElementById('messageInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  // 本地乐观显示（临时 ID，服务器回显时用真实消息去重/替换）
-  const tempId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-  const message = {
-    id: tempId,
-    from: myUser.id,
-    fromNickname: myUser.nickname,
-    fromAvatarColor: myUser.avatarColor,
-    to: activeChat,
-    text,
-    timestamp: Date.now(),
-  };
-  addMessageToChat(message);
-
-  input.value = '';
-  input.style.height = '40px';
-  updateSendButton();
-
-  // 通过 HTTP POST 发送到服务器；服务器会经 SSE 回显真实消息（带真实 id）
-  const result = await apiPost('/api/message', { from: myUser.id, to: activeChat, text });
-  if (!result.ok) {
-    showToast('发送失败，请重试');
-  } else {
-    // 用服务器返回的真实消息替换本地临时消息
-    const hist = chatHistories.get(activeChat) || [];
-    const idx = hist.findIndex(m => m.id === tempId);
-    if (idx >= 0) {
-      hist[idx] = result.message;
-      if (activeChat === message.to) {
-        renderMessages(activeChat);
-      }
-    }
-  }
+async function sendMessage(){
+  if(!activeChat)return;
+  const input=document.getElementById('messageInput'),text=input.value.trim();
+  if(!text)return;
+  const msg={id:'local_'+Date.now(),from:myUser.id,fromNickname:myUser.nickname,fromAvatarColor:myUser.avatarColor,to:activeChat,text,timestamp:Date.now()};
+  addMessageToChat(msg);
+  input.value='';input.style.height='40px';updateSendButton();
+  const result=await apiPost('/api/message',{from:myUser.id,to:activeChat,text});
+  if(result.ok){
+    const hist=chatHistories.get(activeChat)||[];
+    const idx=hist.findIndex(m=>m.id===msg.id);
+    if(idx>=0){hist[idx]=result.message;if(activeChat===msg.to)renderMessages(activeChat)}
+  }else showToast('发送失败');
 }
+function handleInputKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+function autoResize(el){el.style.height='40px';el.style.height=Math.min(el.scrollHeight,120)+'px';updateSendButton()}
+function updateSendButton(){document.getElementById('btnSend').disabled=!document.getElementById('messageInput').value.trim()}
 
-function handleInputKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+/* ====== 视频通话 ====== */
+async function startCall(){
+  if(!activeChat||callState)return;
+  const peer=friendsMap.get(activeChat);
+  if(!peer||!peer.online){showToast('好友不在线');return}
+  callState={peerId:peer.id,peerName:peer.nickname,peerConnection:null,localStream:null,isCaller:true,muted:false};
+  document.getElementById('videoCallOverlay').classList.add('active');
+  document.getElementById('callPeerName').textContent=peer.nickname;
+  document.getElementById('callStatus').textContent='正在呼叫...';
+  try{
+    callState.localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    document.getElementById('localVideo').srcObject=callState.localStream;
+    const pc=new RTCPeerConnection(RTC_CONFIG);
+    callState.peerConnection=pc;
+    callState.localStream.getTracks().forEach(t=>pc.addTrack(t,callState.localStream));
+    pc.ontrack=e=>{document.getElementById('remoteVideo').srcObject=e.streams[0];document.getElementById('callStatus').textContent='通话中'};
+    pc.onicecandidate=e=>{if(e.candidate)apiPost('/api/call/ice',{from:myUser.id,to:peer.id,candidate:e.candidate})};
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+    await apiPost('/api/call/offer',{from:myUser.id,to:peer.id,sdp:offer});
+  }catch(e){showToast('无法访问摄像头/麦克风');endCall()}
 }
-
-function autoResize(el) {
-  el.style.height = '40px';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  updateSendButton();
+async function handleCallOffer(data){
+  if(callState)return;
+  document.getElementById('incomingName').textContent=data.fromNickname;
+  document.getElementById('incomingCall').classList.add('show');
+  window._pendingOffer={from:data.from,fromNickname:data.fromNickname,sdp:data.sdp};
 }
-
-function updateSendButton() {
-  const btn = document.getElementById('btnSend');
-  const input = document.getElementById('messageInput');
-  btn.disabled = !input.value.trim();
+async function acceptCall(){
+  document.getElementById('incomingCall').classList.remove('show');
+  const o=window._pendingOffer;if(!o)return;
+  callState={peerId:o.from,peerName:o.fromNickname,peerConnection:null,localStream:null,isCaller:false,muted:false};
+  document.getElementById('videoCallOverlay').classList.add('active');
+  document.getElementById('callPeerName').textContent=o.fromNickname;
+  document.getElementById('callStatus').textContent='连接中...';
+  try{
+    callState.localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    document.getElementById('localVideo').srcObject=callState.localStream;
+    const pc=new RTCPeerConnection(RTC_CONFIG);
+    callState.peerConnection=pc;
+    callState.localStream.getTracks().forEach(t=>pc.addTrack(t,callState.localStream));
+    pc.ontrack=e=>{document.getElementById('remoteVideo').srcObject=e.streams[0];document.getElementById('callStatus').textContent='通话中'};
+    pc.onicecandidate=e=>{if(e.candidate)apiPost('/api/call/ice',{from:myUser.id,to:o.from,candidate:e.candidate})};
+    await pc.setRemoteDescription(new RTCSessionDescription(o.sdp));
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+    await apiPost('/api/call/answer',{from:myUser.id,to:o.from,sdp:answer});
+  }catch(e){showToast('无法访问摄像头/麦克风');endCall()}
 }
-
-/* ====== 表情面板 ====== */
-function toggleEmoji() {
-  const picker = document.getElementById('emojiPicker');
-  if (!picker.innerHTML) {
-    picker.innerHTML = EMOJI_LIST.map(e =>
-      `<span class="emoji-item" onclick="insertEmoji('${e}')">${e}</span>`
-    ).join('');
-  }
-  picker.classList.toggle('show');
+async function handleCallAnswer(data){
+  if(!callState||!callState.peerConnection)return;
+  try{await callState.peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));document.getElementById('callStatus').textContent='通话中'}catch(e){}
 }
-
-function insertEmoji(emoji) {
-  const input = document.getElementById('messageInput');
-  const start = input.selectionStart;
-  const end = input.selectionEnd;
-  input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
-  input.selectionStart = input.selectionEnd = start + emoji.length;
-  input.focus();
-  updateSendButton();
-  autoResize(input);
+async function handleCallICE(data){
+  if(!callState||!callState.peerConnection)return;
+  try{await callState.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))}catch(e){}
 }
+function rejectCall(){
+  document.getElementById('incomingCall').classList.remove('show');
+  if(window._pendingOffer)apiPost('/api/call/end',{from:myUser.id,to:window._pendingOffer.from}).catch(()=>{});
+  window._pendingOffer=null;
+}
+function handleCallEnd(){
+  showToast('对方已挂断');
+  cleanupCall();
+}
+function endCall(){
+  if(callState)apiPost('/api/call/end',{from:myUser.id,to:callState.peerId}).catch(()=>{});
+  cleanupCall();
+}
+function cleanupCall(){
+  if(callState&&callState.localStream)callState.localStream.getTracks().forEach(t=>t.stop());
+  if(callState&&callState.peerConnection)callState.peerConnection.close();
+  callState=null;
+  document.getElementById('videoCallOverlay').classList.remove('active');
+  document.getElementById('localVideo').srcObject=null;
+  document.getElementById('remoteVideo').srcObject=null;
+  document.getElementById('btnMute').classList.remove('muted');
+}
+function toggleMute(){
+  if(!callState||!callState.localStream)return;
+  callState.muted=!callState.muted;
+  callState.localStream.getAudioTracks().forEach(t=>t.enabled=!callState.muted);
+  document.getElementById('btnMute').classList.toggle('muted',callState.muted);
+}
+window.addEventListener('beforeunload',()=>{if(myUser)navigator.sendBeacon('/api/logout',JSON.stringify({userId:myUser.id}))});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&myUser)poll()});
 
 /* ====== 工具函数 ====== */
-function updateMyAvatar() {
-  document.getElementById('myAvatarSmall').style.background = myUser.avatarColor;
-  document.getElementById('myAvatarSmall').textContent = myUser.nickname[0];
+async function apiPost(path,body){
+  try{const res=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return await res.json()}catch(e){return{ok:false,error:e.message}}
 }
-
-function scrollToBottom() {
-  const el = document.getElementById('chatMessages');
-  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+function updateMyAvatar(){
+  document.getElementById('myAvatarSmall').style.background=myUser.avatarColor;
+  document.getElementById('myAvatarSmall').textContent=myUser.nickname[0];
 }
+function scrollToBottom(){requestAnimationFrame(()=>{const el=document.getElementById('chatMessages');el.scrollTop=el.scrollHeight})}
+function formatTime(ts){const d=new Date(ts),n=new Date();if(d.toDateString()===n.toDateString())return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;return`${d.getMonth()+1}/${d.getDate()}`}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timeout);t._timeout=setTimeout(()=>t.classList.remove('show'),2000)}
 
-function formatTime(ts) {
-  const d = new Date(ts);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) {
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  }
-  return `${d.getMonth()+1}/${d.getDate()}`;
+/* ====== 表情 ====== */
+function toggleEmoji(){
+  const p=document.getElementById('emojiPicker');
+  if(!p.innerHTML)p.innerHTML=EMOJI_LIST.map(e=>`<span class="emoji-item" onclick="insertEmoji('${e}')">${e}</span>`).join('');
+  p.classList.toggle('show');
 }
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+function insertEmoji(emoji){
+  const input=document.getElementById('messageInput'),s=input.selectionStart,e2=input.selectionEnd;
+  input.value=input.value.substring(0,s)+emoji+input.value.substring(e2);
+  input.selectionStart=input.selectionEnd=s+emoji.length;
+  input.focus();updateSendButton();autoResize(input);
 }
-
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
-}
-
-/* ====== 初始化 ====== */
-document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') login();
+document.addEventListener('click',e=>{
+  const p=document.getElementById('emojiPicker');
+  if(p.classList.contains('show')&&!e.target.closest('.emoji-picker')&&!e.target.closest('.input-tool'))p.classList.remove('show');
 });
 
-// 自动登录
-const savedNickname = localStorage.getItem('chat_nickname');
-const savedId = localStorage.getItem('chat_user_id');
-if (savedNickname) {
-  document.getElementById('nicknameInput').value = savedNickname;
-  myUser = { id: savedId, nickname: savedNickname };
+/* ====== 登录 & 初始化 ====== */
+function login(){
+  const input=document.getElementById('nicknameInput'),nickname=input.value.trim();
+  if(!nickname){input.focus();input.style.borderColor='#FA5151';setTimeout(()=>input.style.borderColor='',1500);return}
+  const savedId=localStorage.getItem('chat_user_id');
+  myUser={id:savedId,nickname};
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').classList.add('active');
+  connect();
 }
-
-// 点击空白关闭表情
-document.addEventListener('click', (e) => {
-  const picker = document.getElementById('emojiPicker');
-  if (picker.classList.contains('show') &&
-      !e.target.closest('.emoji-picker') &&
-      !e.target.closest('.input-tool')) {
-    picker.classList.remove('show');
-  }
+document.getElementById('nicknameInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+const sn=localStorage.getItem('chat_nickname'),si=localStorage.getItem('chat_user_id');
+if(sn){document.getElementById('nicknameInput').value=sn;myUser={id:si,nickname:sn}}
+/* 输入状态 */
+let typingTimeout=null;
+document.getElementById('messageInput').addEventListener('input',()=>{
+  if(!activeChat)return;
+  apiPost('/api/typing',{from:myUser.id,to:activeChat,isTyping:true});
+  clearTimeout(typingTimeout);
+  typingTimeout=setTimeout(()=>{apiPost('/api/typing',{from:myUser.id,to:activeChat,isTyping:false})},1000);
 });
 </script>
 </body>
