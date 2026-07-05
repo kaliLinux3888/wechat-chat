@@ -1,0 +1,11 @@
+{
+  "name": "wechat-style-chat",
+  "version": "1.2.0",
+  "description": "微信风格聊天应用 (短轮询 · 数据持久化 · 长期可用)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "keepalive": "./keepalive.sh"
+  },
+  "dependencies": {}
+}

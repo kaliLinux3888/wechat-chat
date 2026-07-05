@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微信风格聊天</title>
+<style>
+/* ====== CSS Reset & Variables ====== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --wechat-green: #07C160;
+  --wechat-green-dark: #06AD56;
+  --wechat-green-light: #2DC100;
+  --wechat-green-bg: #dff6e4;
+  --bg: #f5f5f5;
+  --bg-white: #ffffff;
+  --bg-sidebar: #f8f8f8;
+  --bg-chat: #ededed;
+  --text-primary: #191919;
+  --text-secondary: #999;
+  --text-muted: #b0b0b0;
+  --border: #e5e5e5;
+  --bubble-self: #95ec69;
+  --bubble-other: #ffffff;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --transition: 0.2s ease;
+}
+html, body { height:100%; overflow:hidden; font-family:var(--font-family); background:var(--bg); color:var(--text-primary); font-size:14px; }
+button { font-family:inherit; cursor:pointer; border:none; outline:none; background:none; }
+input { font-family:inherit; outline:none; border:none; }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#aaa; }
+
+/* ====== Login Screen ====== */
+.login-container {
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg, #07C160 0%, #06AD56 40%, #059b4b 100%);
+  z-index: 1000;
+}
+.login-card {
+  background:#fff; border-radius:16px; padding:48px 40px; width:380px;
+  box-shadow:0 20px 60px rgba(0,0,0,.15); text-align:center;
+}
+.login-card .logo {
+  width:64px; height:64px; background:var(--wechat-green); border-radius:16px;
+  margin:0 auto 16px; display:flex; align-items:center; justify-content:center;
+}
+.login-card .logo svg { width:36px; height:36px; fill:#fff; }
+.login-card h2 { font-size:24px; font-weight:600; margin-bottom:8px; }
+.login-card p { color:var(--text-secondary); font-size:13px; margin-bottom:28px; }
+.login-card .input-group {
+  position:relative; margin-bottom:16px; text-align:left;
+}
+.login-card .input-group label {
+  display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;
+}
+.login-card .input-group input {
+  width:100%; height:44px; border:1.5px solid var(--border); border-radius:10px;
+  padding:0 14px; font-size:15px; transition:border-color var(--transition);
+}
+.login-card .input-group input:focus { border-color:var(--wechat-green); }
+.login-card .btn-login {
+  width:100%; height:46px; background:var(--wechat-green); color:#fff;
+  border-radius:10px; font-size:16px; font-weight:500; margin-top:8px;
+  transition:background var(--transition);
+}
+.login-card .btn-login:hover { background:var(--wechat-green-dark); }
+.login-card .btn-login:active { transform:scale(.98); }
+.login-card .hint { margin-top:16px; font-size:12px; color:var(--text-muted); }
+
+/* ====== Main Layout ====== */
+.app { display:none; height:100vh; }
+.app.active { display:flex; }
+
+/* Sidebar */
+.sidebar {
+  width:300px; min-width:300px; background:var(--bg-sidebar);
+  border-right:1px solid var(--border); display:flex; flex-direction:column;
+}
+.sidebar-header {
+  height:60px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.sidebar-header h3 { font-size:17px; font-weight:600; }
+.sidebar-header .my-avatar {
+  width:36px; height:36px; border-radius:8px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:600; flex-shrink:0;
+}
+.sidebar-logo {
+  display:flex; align-items:center; gap:10px;
+}
+.sidebar-logo svg { width:28px; height:28px; fill:var(--wechat-green); }
+.search-box {
+  padding:12px 16px; flex-shrink:0;
+}
+.search-box input {
+  width:100%; height:36px; border-radius:6px; background:#e8e8e8;
+  padding:0 12px; font-size:13px; transition:background var(--transition);
+}
+.search-box input:focus { background:#fff; box-shadow:0 0 0 2px rgba(7,193,96,.2); }
+
+.contact-list { flex:1; overflow-y:auto; }
+.contact-item {
+  display:flex; align-items:center; padding:14px 20px; cursor:pointer;
+  transition:background var(--transition); position:relative;
+}
+.contact-item:hover { background:#e8e8e8; }
+.contact-item.active { background:#d9d9d9; }
+.contact-item .contact-avatar {
+  width:44px; height:44px; border-radius:6px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:600; flex-shrink:0; margin-right:12px;
+}
+.contact-item .contact-info { flex:1; min-width:0; }
+.contact-item .contact-name {
+  font-size:14px; font-weight:500; margin-bottom:4px;
+  display:flex; align-items:center; gap:6px;
+}
+.contact-item .contact-last {
+  font-size:12px; color:var(--text-secondary); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.contact-item .contact-meta {
+  display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; margin-left:8px;
+}
+.contact-item .contact-time { font-size:11px; color:var(--text-muted); }
+.contact-item .contact-unread {
+  background:var(--wechat-green); color:#fff; font-size:11px; min-width:20px;
+  height:20px; border-radius:10px; display:none; align-items:center;
+  justify-content:center; padding:0 6px; margin-top:4px; font-weight:600;
+}
+.contact-item .contact-unread.show { display:flex; }
+.contact-item .online-dot {
+  width:8px; height:8px; border-radius:50%; background:var(--wechat-green);
+  flex-shrink:0;
+}
+
+/* Chat Area */
+.chat-area {
+  flex:1; display:flex; flex-direction:column; background:var(--bg-chat);
+}
+.chat-header {
+  height:60px; display:flex; align-items:center; padding:0 20px;
+  background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.chat-header .chat-avatar {
+  width:36px; height:36px; border-radius:6px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:600; margin-right:12px;
+}
+.chat-header .chat-title { font-size:16px; font-weight:600; }
+.chat-header .chat-subtitle {
+  font-size:12px; color:var(--text-secondary); margin-left:8px;
+}
+
+.chat-messages {
+  flex:1; overflow-y:auto; padding:20px;
+  display:flex; flex-direction:column; gap:2px;
+}
+
+/* Message Bubbles */
+.message-row { display:flex; margin-bottom:18px; align-items:flex-start; }
+.message-row.self { flex-direction:row-reverse; }
+.message-row .msg-avatar {
+  width:34px; height:34px; border-radius:4px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:600; flex-shrink:0;
+}
+.message-row .msg-body { max-width:60%; display:flex; flex-direction:column; }
+.message-row.self .msg-body { align-items:flex-end; margin-right:10px; }
+.message-row.other .msg-body { margin-left:10px; align-items:flex-start; }
+.message-row .msg-bubble {
+  padding:10px 14px; font-size:14px; line-height:1.5; word-break:break-word;
+  position:relative; border-radius:8px;
+}
+.message-row.self .msg-bubble {
+  background:var(--bubble-self); border-top-right-radius:2px;
+}
+.message-row.other .msg-bubble {
+  background:var(--bubble-other); border-top-left-radius:2px; box-shadow:0 1px 1px rgba(0,0,0,.05);
+}
+.message-row .msg-time {
+  font-size:11px; color:var(--text-muted); margin-top:4px;
+}
+.message-row.system {
+  justify-content:center; margin:12px 0;
+}
+.message-row.system .msg-system-text {
+  font-size:12px; color:var(--text-muted); background:rgba(0,0,0,.05);
+  padding:4px 12px; border-radius:4px;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  padding:2px 20px 8px; font-size:12px; color:var(--text-secondary);
+  display:none; animation:typingPulse 1.5s infinite;
+}
+.typing-indicator.show { display:block; }
+@keyframes typingPulse { 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+/* Chat Input Bar */
+.chat-input-bar {
+  background:var(--bg-white); border-top:1px solid var(--border);
+  padding:10px 16px; display:flex; align-items:flex-end; gap:10px; flex-shrink:0;
+}
+.chat-input-bar .input-tool {
+  width:36px; height:36px; border-radius:6px; display:flex;
+  align-items:center; justify-content:center; transition:background var(--transition);
+  flex-shrink:0;
+}
+.chat-input-bar .input-tool:hover { background:#f0f0f0; }
+.chat-input-bar .input-tool svg { width:24px; height:24px; fill:#666; }
+.chat-input-bar textarea {
+  flex:1; height:40px; max-height:120px; border:none; resize:none;
+  font-size:14px; line-height:1.5; padding:6px 0; background:transparent;
+  font-family:var(--font-family);
+}
+.chat-input-bar textarea::placeholder { color:var(--text-muted); }
+.chat-input-bar .btn-send {
+  width:80px; height:36px; background:var(--wechat-green); color:#fff;
+  border-radius:6px; font-size:13px; font-weight:500; flex-shrink:0;
+  transition:all var(--transition);
+}
+.chat-input-bar .btn-send:hover { background:var(--wechat-green-dark); }
+.chat-input-bar .btn-send:active { transform:scale(.95); }
+.chat-input-bar .btn-send:disabled { background:#ccc; cursor:not-allowed; transform:none; }
+
+/* Emoji Picker */
+.emoji-picker {
+  display:none; background:var(--bg-white); border-top:1px solid var(--border);
+  padding:12px; flex-shrink:0; flex-wrap:wrap; gap:8px; justify-content:flex-start;
+  max-height:200px; overflow-y:auto;
+}
+.emoji-picker.show { display:flex; }
+.emoji-picker .emoji-item {
+  width:36px; height:36px; display:flex; align-items:center;
+  justify-content:center; font-size:22px; cursor:pointer; border-radius:6px;
+  transition:background var(--transition);
+}
+.emoji-picker .emoji-item:hover { background:#f5f5f5; }
+
+/* Welcome Screen */
+.welcome-screen {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; background:var(--bg-chat); color:var(--text-muted);
+}
+.welcome-screen svg { width:80px; height:80px; fill:#d0d0d0; margin-bottom:16px; }
+.welcome-screen h3 { font-size:18px; font-weight:500; color:#999; }
+
+/* Toast */
+.toast {
+  position:fixed; top:30px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.75); color:#fff; padding:10px 24px;
+  border-radius:8px; font-size:13px; z-index:9999;
+  opacity:0; transition:opacity .3s; pointer-events:none;
+}
+.toast.show { opacity:1; }
+
+/* Badge animation */
+@keyframes badgePop { 0%{transform:scale(0);} 80%{transform:scale(1.2);} 100%{transform:scale(1);} }
+.contact-item .contact-unread.pop { animation:badgePop .35s ease-out; }
+
+/* Message animate in */
+@keyframes msgIn { from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
+.message-row { animation:msgIn .25s ease-out; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { width:100%; min-width:100%; }
+  .chat-area { display:none; position:fixed; inset:0; }
+  .chat-area.mobile-active { display:flex; z-index:50; }
+  .sidebar.mobile-hidden { display:none; }
+  .chat-header .btn-back {
+    display:flex !important; width:32px; height:32px; align-items:center;
+    justify-content:center; margin-right:8px;
+  }
+}
+@media (min-width: 769px) {
+  .chat-header .btn-back { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== 登录界面 ====== -->
+<div class="login-container" id="loginScreen">
+  <div class="login-card">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    </div>
+    <h2>欢迎使用聊天</h2>
+    <p>微信风格 · 即时通讯</p>
+    <div class="input-group">
+      <label>你的昵称</label>
+      <input type="text" id="nicknameInput" placeholder="请输入你的昵称" maxlength="20" autocomplete="off">
+    </div>
+    <button class="btn-login" onclick="login()">进入聊天</button>
+    <p class="hint">💡 用多个窗口打开就可以体验多人聊天</p>
+  </div>
+</div>
+
+<!-- ====== 主界面 ====== -->
+<div class="app" id="app">
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        <h3>微信</h3>
+      </div>
+      <div class="my-avatar" id="myAvatarSmall">我</div>
+    </div>
+    <div class="search-box">
+      <input type="text" placeholder="🔍 搜索聊天" id="searchInput" oninput="filterContacts()">
+    </div>
+    <div class="contact-list" id="contactList"></div>
+  </aside>
+
+  <!-- 聊天区域 -->
+  <main class="chat-area" id="chatArea">
+    <!-- 占位 -->
+    <div class="welcome-screen" id="welcomeScreen">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+      <h3>选择联系人开始聊天</h3>
+    </div>
+    <!-- 聊天界面 -->
+    <div id="chatView" style="display:none;flex:1;display:flex;flex-direction:column;">
+      <div class="chat-header">
+        <button class="btn-back" onclick="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#333" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <div class="chat-avatar" id="chatAvatar">?</div>
+        <div>
+          <div class="chat-title" id="chatTitle"></div>
+          <div class="chat-subtitle" id="chatSubtitle"></div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="typing-indicator" id="typingIndicator">对方正在输入...</div>
+      <div class="emoji-picker" id="emojiPicker"></div>
+      <div class="chat-input-bar">
+        <button class="input-tool" onclick="toggleEmoji()" title="表情">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#666" stroke-width="1.5"/><circle cx="9" cy="10" r="1" fill="#666"/><circle cx="15" cy="10" r="1" fill="#666"/><path d="M8 14c1.2 1.8 3.4 2.5 4 2.5s2.8-.7 4-2.5" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <textarea id="messageInput" placeholder="输入消息..." rows="1" onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="btn-send" id="btnSend" onclick="sendMessage()" disabled>发送</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== 全局状态 ====== */
+let myUser = null;
+let pollTimer = null;
+let lastSeq = 0;
+let activeChat = null;
+const onlineUsers = new Map();       // userId -> user info
+const chatHistories = new Map();     // userId -> messages[]
+const unreadCounts = new Map();      // userId -> number
+const typingUsers = new Map();       // userId -> timer
+const EMOJI_LIST = [
+  '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰','😗',
+  '😚','😇','🙂','🤗','🤩','😏','😌','😛','😜','😝','🤑','🤔','🤐','😐','😑','😶',
+  '🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','🤤','😒','😓','😕','🙃',
+  '🤑','😲','☹️','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬',
+  '😰','😱','🥵','🥶','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','😈',
+  '👿','💀','☠️','💩','🤡','👻','👽','🤖','😺','😸','😹','😻','❤️','🧡','💛','💚',
+  '💙','💜','🖤','🤍','🤎','💔','💕','💖','💗','💓','💞','👍','👎','👏','🙌','🤝',
+  '💪','🤲','👐','🙏','✌️','🤞','👌','🤏','👋','🤚','🖐','✋','🦾','🎉','🎊','✨',
+];
+
+/* ====== 连接 (短轮询 · 远程可用) ====== */
+async function connect() {
+  try {
+    // 1. 登录，获取正式 userId
+    const loginRes = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: myUser.nickname, userId: myUser.id }),
+    });
+    const loginData = await loginRes.json();
+    if (!loginData.ok) { showToast('登录失败'); return; }
+    myUser = loginData.user;
+    localStorage.setItem('chat_user_id', myUser.id);
+    localStorage.setItem('chat_nickname', myUser.nickname);
+    updateMyAvatar();
+    showToast(`欢迎，${myUser.nickname}！`);
+
+    // 2. 立即拉取一次，然后启动轮询
+    lastSeq = 0;
+    await poll();
+    startPolling();
+  } catch (err) {
+    showToast('网络错误，3秒后重连...');
+    setTimeout(connect, 3000);
+  }
+}
+
+async function poll() {
+  if (!myUser) return;
+  try {
+    const res = await fetch(`/api/poll?userId=${myUser.id}&since=${lastSeq}`);
+    const data = await res.json();
+    if (!data.ok) return;
+
+    // 更新在线用户列表
+    onlineUsers.clear();
+    (data.onlineUsers || []).forEach(u => onlineUsers.set(u.id, u));
+    renderContactList();
+
+    // 处理增量事件
+    (data.events || []).forEach(evt => {
+      lastSeq = Math.max(lastSeq, evt.seq);
+      handleEvent(evt);
+    });
+  } catch (err) {
+    // 网络抖动，下次重试
+  }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(poll, 2000);
+}
+
+function handleEvent(evt) {
+  switch (evt.type) {
+    case 'message':
+      addMessageToChat(evt.data.message);
+      break;
+    case 'typing':
+      handleTypingIndicator(evt.data);
+      break;
+    case 'user_online':
+      // 用户列表已在 poll 中更新，这里仅刷新头部
+      if (activeChat) updateChatHeader();
+      break;
+    case 'user_offline':
+      if (activeChat) updateChatHeader();
+      break;
+  }
+}
+
+// 页面关闭时尽力上报离线
+window.addEventListener('beforeunload', () => {
+  if (myUser) {
+    navigator.sendBeacon('/api/logout', JSON.stringify({ userId: myUser.id }));
+  }
+});
+
+// 页面可见性变化：切回时立即轮询
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && myUser) poll();
+});
+
+/* ====== HTTP API 封装 ====== */
+async function apiPost(path, body) {
+  try {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+async function fetchHistory(userId) {
+  try {
+    const res = await fetch(`/api/history?userId=${myUser.id}&with=${userId}`);
+    const data = await res.json();
+    if (data.ok) {
+      chatHistories.set(data.with, data.messages);
+      renderMessages(data.with);
+    }
+  } catch (e) {}
+}
+
+/* ====== 登录 ====== */
+function login() {
+  const input = document.getElementById('nicknameInput');
+  const nickname = input.value.trim();
+  if (!nickname) {
+    input.focus();
+    input.style.borderColor = '#FA5151';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+
+  const savedId = localStorage.getItem('chat_user_id');
+  myUser = { id: savedId, nickname };
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+
+  connect();
+}
+
+/* ====== 联系人列表 ====== */
+function renderContactList() {
+  const container = document.getElementById('contactList');
+  const searchText = (document.getElementById('searchInput').value || '').toLowerCase();
+
+  let entries = Array.from(onlineUsers.values());
+  // 也添加有聊天历史但不在线的用户
+  chatHistories.forEach((msgs, userId) => {
+    if (!onlineUsers.has(userId)) {
+      const lastMsg = msgs[msgs.length - 1];
+      entries.push({ id: userId, nickname: lastMsg?.fromNickname || '用户', avatarColor: '#ccc', online: false, _fromHistory: true });
+    }
+  });
+
+  // 去重
+  const seen = new Set();
+  entries = entries.filter(u => {
+    if (seen.has(u.id)) return false;
+    seen.add(u.id);
+    return true;
+  });
+
+  // 搜索过滤
+  if (searchText) {
+    entries = entries.filter(u => u.nickname.toLowerCase().includes(searchText));
+  }
+
+  // 排序：有未读的在前，按最后消息时间
+  entries.sort((a, b) => {
+    const aUnread = unreadCounts.get(a.id) || 0;
+    const bUnread = unreadCounts.get(b.id) || 0;
+    if (aUnread && !bUnread) return -1;
+    if (!aUnread && bUnread) return 1;
+    return 0;
+  });
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#b0b0b0;font-size:13px;">暂无联系人，让朋友也打开这个页面吧</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(u => {
+    const lastMsg = getLastMessage(u.id);
+    const unread = unreadCounts.get(u.id) || 0;
+    const isActive = activeChat === u.id;
+    return `
+      <div class="contact-item ${isActive ? 'active' : ''}" onclick="openChat('${u.id}')" data-userid="${u.id}">
+        <div class="contact-avatar" style="background:${u.avatarColor}">${u.nickname[0]}</div>
+        <div class="contact-info">
+          <div class="contact-name">
+            ${escapeHtml(u.nickname)}
+            ${u.online !== false ? '<span class="online-dot"></span>' : ''}
+          </div>
+          <div class="contact-last">${lastMsg ? lastMsg.text : ''}</div>
+        </div>
+        <div class="contact-meta">
+          <span class="contact-time">${lastMsg ? formatTime(lastMsg.timestamp) : ''}</span>
+          <span class="contact-unread ${unread > 0 ? 'show' : ''}">${unread > 99 ? '99+' : unread}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterContacts() {
+  renderContactList();
+}
+
+function getLastMessage(userId) {
+  const history = chatHistories.get(userId) || [];
+  return history[history.length - 1] || null;
+}
+
+/* ====== 打开聊天 ====== */
+function openChat(userId) {
+  activeChat = userId;
+  unreadCounts.set(userId, 0);
+
+  const sidebar = document.getElementById('sidebar');
+  const chatArea = document.getElementById('chatArea');
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const chatView = document.getElementById('chatView');
+
+  // 移动端视图切换
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add('mobile-hidden');
+    chatArea.classList.add('mobile-active');
+  }
+
+  welcomeScreen.style.display = 'none';
+  chatView.style.display = 'flex';
+
+  updateChatHeader();
+  requestHistory(userId);
+  renderContactList();
+
+  // 隐藏输入状态
+  document.getElementById('typingIndicator').classList.remove('show');
+  // 关闭表情
+  document.getElementById('emojiPicker').classList.remove('show');
+
+  // 滚动到底部
+  setTimeout(() => scrollToBottom(), 100);
+
+  document.getElementById('messageInput').focus();
+}
+
+function updateChatHeader() {
+  if (!activeChat) return;
+  const user = onlineUsers.get(activeChat);
+  // try history
+  let info = user;
+  if (!info) {
+    chatHistories.forEach((msgs, uid) => {
+      if (uid === activeChat && msgs.length > 0) {
+        const m = msgs[msgs.length - 1];
+        info = { id: uid, nickname: m.fromNickname || m.from, avatarColor: m.fromAvatarColor || '#ccc', online: false };
+      }
+    });
+  }
+
+  document.getElementById('chatAvatar').style.background = info?.avatarColor || '#ccc';
+  document.getElementById('chatAvatar').textContent = (info?.nickname || '?')[0];
+  document.getElementById('chatTitle').textContent = info?.nickname || '未知用户';
+  document.getElementById('chatSubtitle').textContent = (info?.online !== false) ? '在线' : '离线';
+}
+
+function goBack() {
+  const sidebar = document.getElementById('sidebar');
+  const chatArea = document.getElementById('chatArea');
+  sidebar.classList.remove('mobile-hidden');
+  chatArea.classList.remove('mobile-active');
+  activeChat = null;
+  document.getElementById('welcomeScreen').style.display = 'flex';
+  document.getElementById('chatView').style.display = 'none';
+}
+
+function requestHistory(userId) {
+  const history = chatHistories.get(userId);
+  if (!history || history.length === 0) {
+    fetchHistory(userId);
+  } else {
+    renderMessages(userId);
+  }
+}
+
+/* ====== 渲染消息 ====== */
+function renderMessages(userId) {
+  const container = document.getElementById('chatMessages');
+  const messages = chatHistories.get(userId) || [];
+  container.innerHTML = messages.map(m => renderMessageBubble(m)).join('');
+  scrollToBottom();
+}
+
+function renderMessageBubble(m) {
+  if (m.type === 'system') {
+    return `<div class="message-row system"><span class="msg-system-text">${escapeHtml(m.text)}</span></div>`;
+  }
+  const isSelf = m.from === myUser.id;
+  const time = new Date(m.timestamp);
+  const timeStr = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+  return `
+    <div class="message-row ${isSelf ? 'self' : 'other'}">
+      <div class="msg-avatar" style="background:${m.fromAvatarColor || '#ccc'}">${(m.fromNickname || '?')[0]}</div>
+      <div class="msg-body">
+        <div class="msg-bubble">${escapeHtml(m.text)}</div>
+        <span class="msg-time">${timeStr}</span>
+      </div>
+    </div>
+  `;
+}
+
+function addMessageToChat(message) {
+  const chatUserId = message.from === myUser.id ? message.to : message.from;
+  if (!chatHistories.has(chatUserId)) {
+    chatHistories.set(chatUserId, []);
+  }
+  // 去重：避免本地乐观显示与服务器回显重复
+  const history = chatHistories.get(chatUserId);
+  if (history.some(m => m.id === message.id)) {
+    return;
+  }
+  history.push(message);
+
+  // 更新未读
+  if (message.from !== myUser.id && activeChat !== chatUserId) {
+    const count = (unreadCounts.get(chatUserId) || 0) + 1;
+    unreadCounts.set(chatUserId, count);
+  }
+
+  if (activeChat === chatUserId) {
+    // 追加到界面
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', renderMessageBubble(message));
+    scrollToBottom();
+  }
+
+  renderContactList();
+}
+
+/* ====== 输入状态 ====== */
+function handleTypingIndicator(data) {
+  if (activeChat === data.from) {
+    const el = document.getElementById('typingIndicator');
+    if (data.isTyping) {
+      el.classList.add('show');
+      clearTimeout(typingUsers.get(data.from));
+      typingUsers.set(data.from, setTimeout(() => {
+        el.classList.remove('show');
+      }, 3000));
+    } else {
+      el.classList.remove('show');
+    }
+  }
+}
+
+let typingTimeout = null;
+document.getElementById('messageInput').addEventListener('input', () => {
+  if (!activeChat) return;
+  apiPost('/api/typing', { from: myUser.id, to: activeChat, isTyping: true });
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    apiPost('/api/typing', { from: myUser.id, to: activeChat, isTyping: false });
+  }, 1000);
+});
+
+/* ====== 发送消息 ====== */
+async function sendMessage() {
+  if (!activeChat) return;
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  // 本地乐观显示（临时 ID，服务器回显时用真实消息去重/替换）
+  const tempId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const message = {
+    id: tempId,
+    from: myUser.id,
+    fromNickname: myUser.nickname,
+    fromAvatarColor: myUser.avatarColor,
+    to: activeChat,
+    text,
+    timestamp: Date.now(),
+  };
+  addMessageToChat(message);
+
+  input.value = '';
+  input.style.height = '40px';
+  updateSendButton();
+
+  // 通过 HTTP POST 发送到服务器；服务器会经 SSE 回显真实消息（带真实 id）
+  const result = await apiPost('/api/message', { from: myUser.id, to: activeChat, text });
+  if (!result.ok) {
+    showToast('发送失败，请重试');
+  } else {
+    // 用服务器返回的真实消息替换本地临时消息
+    const hist = chatHistories.get(activeChat) || [];
+    const idx = hist.findIndex(m => m.id === tempId);
+    if (idx >= 0) {
+      hist[idx] = result.message;
+      if (activeChat === message.to) {
+        renderMessages(activeChat);
+      }
+    }
+  }
+}
+
+function handleInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = '40px';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  updateSendButton();
+}
+
+function updateSendButton() {
+  const btn = document.getElementById('btnSend');
+  const input = document.getElementById('messageInput');
+  btn.disabled = !input.value.trim();
+}
+
+/* ====== 表情面板 ====== */
+function toggleEmoji() {
+  const picker = document.getElementById('emojiPicker');
+  if (!picker.innerHTML) {
+    picker.innerHTML = EMOJI_LIST.map(e =>
+      `<span class="emoji-item" onclick="insertEmoji('${e}')">${e}</span>`
+    ).join('');
+  }
+  picker.classList.toggle('show');
+}
+
+function insertEmoji(emoji) {
+  const input = document.getElementById('messageInput');
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
+  input.selectionStart = input.selectionEnd = start + emoji.length;
+  input.focus();
+  updateSendButton();
+  autoResize(input);
+}
+
+/* ====== 工具函数 ====== */
+function updateMyAvatar() {
+  document.getElementById('myAvatarSmall').style.background = myUser.avatarColor;
+  document.getElementById('myAvatarSmall').textContent = myUser.nickname[0];
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('chatMessages');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+/* ====== 初始化 ====== */
+document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') login();
+});
+
+// 自动登录
+const savedNickname = localStorage.getItem('chat_nickname');
+const savedId = localStorage.getItem('chat_user_id');
+if (savedNickname) {
+  document.getElementById('nicknameInput').value = savedNickname;
+  myUser = { id: savedId, nickname: savedNickname };
+}
+
+// 点击空白关闭表情
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('emojiPicker');
+  if (picker.classList.contains('show') &&
+      !e.target.closest('.emoji-picker') &&
+      !e.target.closest('.input-tool')) {
+    picker.classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>
