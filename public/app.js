@@ -96,6 +96,8 @@ function switchTab(tab){
   activeTab=tab;
   document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
+  // 同步移动端底部导航
+  document.querySelectorAll('.mobile-tabbar .tab-item').forEach(t=>t.classList.toggle('active',tab==='messages'&&t.textContent.includes('消息')||tab==='contacts'&&t.textContent.includes('通讯录')||tab==='requests'&&t.textContent.includes('新的朋友')));
   if(tab==='contacts')document.getElementById('userSearchInput').focus();
   if(tab==='requests')loadRequests();
 }
@@ -160,7 +162,7 @@ async function loadRequests(){
   try{
     const res=await fetch(`/api/friend/requests?userId=${myUser.id}`);
     const data=await res.json();
-    if(data.ok){pendingRequests=data.requests||[];renderRequests();const badge=document.getElementById('requestBadge');const cnt=pendingRequests.length;badge.textContent=cnt;badge.style.display=cnt>0?'inline-flex':'none'}
+    if(data.ok){pendingRequests=data.requests||[];renderRequests();const badge=document.getElementById('requestBadge');const cnt=pendingRequests.length;badge.textContent=cnt;badge.style.display=cnt>0?'inline-flex':'none';const dot=document.getElementById('tabDot');if(dot)dot.classList.toggle('has-badge',cnt>0)}
   }catch(e){}
 }
 function renderRequests(){

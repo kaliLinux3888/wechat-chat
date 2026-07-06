@@ -2,257 +2,294 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat - 加好友 · 视频通话</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>微信</title>
 <style>
+/* ===== Reset & Variables ===== */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --green:#07C160;--green-dark:#06AD56;--bg:#f5f5f5;--bg-white:#fff;
-  --bg-sidebar:#f8f8f8;--bg-chat:#ededed;--text:#191919;--text2:#999;
-  --text3:#b0b0b0;--border:#e5e5e5;--bubble-self:#95ec69;--transition:0.2s ease;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --green:#07C160;--green-dark:#06AD56;--green-press:#059b4b;
+  --bg:#EDEDED;--white:#fff;--sidebar-bg:#191919;
+  --text:#111;--text2:#888;--text3:#b2b2b2;
+  --border:#e6e6e6;--bubble-self:#95EC69;--bubble-other:#fff;
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  --transition:0.15s ease;
+  --nav-height:44px;--tab-height:50px;
 }
-html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px}
-button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none}
-input{font-family:inherit;outline:none;border:none}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
-/* Login */
-.login-container{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#07C160,#06AD56,#059b4b);z-index:1000}
-.login-card{background:#fff;border-radius:16px;padding:48px 40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.15);text-align:center}
-.login-card .logo{width:64px;height:64px;background:var(--green);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
-.login-card .logo svg{width:36px;height:36px;fill:#fff}
-.login-card h2{font-size:24px;font-weight:600;margin-bottom:8px}
-.login-card p{color:var(--text2);font-size:13px;margin-bottom:28px}
-.login-card .input-group{position:relative;margin-bottom:16px;text-align:left}
-.login-card .input-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px}
-.login-card .input-group input{width:100%;height:44px;border:1.5px solid var(--border);border-radius:10px;padding:0 14px;font-size:15px;transition:border-color var(--transition)}
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+button,input,textarea{font-family:inherit;border:none;outline:none}
+button{cursor:pointer;background:none}
+input,textarea{-webkit-appearance:none;appearance:none}
+::-webkit-scrollbar{width:0;height:0}
+
+/* ===== Login ===== */
+.login-container{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#191919;z-index:1000}
+.login-card{background:var(--white);border-radius:4px;padding:40px 32px;width:320px;box-shadow:0 2px 16px rgba(0,0,0,.3)}
+.login-card .logo{width:56px;height:56px;background:var(--green);border-radius:4px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center}
+.login-card .logo svg{width:30px;height:30px;fill:#fff}
+.login-card h2{font-size:18px;font-weight:500;margin-bottom:4px;letter-spacing:1px}
+.login-card p{color:var(--text2);font-size:12px;margin-bottom:24px}
+.login-card .input-group{margin-bottom:14px;text-align:left}
+.login-card .input-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
+.login-card .input-group input{width:100%;height:40px;border:1px solid var(--border);padding:0 12px;font-size:14px;transition:border-color var(--transition)}
 .login-card .input-group input:focus{border-color:var(--green)}
-.login-card .btn-login{width:100%;height:46px;background:var(--green);color:#fff;border-radius:10px;font-size:16px;font-weight:500;margin-top:8px}
-.login-card .btn-login:hover{background:var(--green-dark)}
-.login-card .btn-login:active{transform:scale(.98)}
-.login-card .hint{margin-top:16px;font-size:12px;color:var(--text3)}
-/* Layout */
-.app{display:none;height:100vh}
+.login-card .btn-login{width:100%;height:42px;background:var(--green);color:#fff;font-size:15px;font-weight:400;margin-top:6px;letter-spacing:2px}
+.login-card .btn-login:active{background:var(--green-press)}
+.login-card .hint{margin-top:16px;font-size:11px;color:var(--text3)}
+
+/* ===== Main Layout ===== */
+.app{display:none;height:100vh;background:var(--bg)}
 .app.active{display:flex}
-.sidebar{width:320px;min-width:320px;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column}
-.sidebar-header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-header .my-avatar{width:34px;height:34px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.sidebar-logo{display:flex;align-items:center;gap:8px}
-.sidebar-logo svg{width:26px;height:26px;fill:var(--green)}
-.sidebar-logo h3{font-size:16px;font-weight:600}
-/* Tabs */
-.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-tab{flex:1;text-align:center;padding:12px 0;font-size:13px;color:var(--text2);position:relative;cursor:pointer;transition:color var(--transition)}
-.sidebar-tab:hover{color:var(--text)}
-.sidebar-tab.active{color:var(--green);font-weight:600}
-.sidebar-tab.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:var(--green);border-radius:2px}
-.sidebar-tab .tab-badge{background:#FA5151;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px;vertical-align:middle}
-/* Search */
-.search-box{padding:10px 16px;flex-shrink:0}
-.search-box input{width:100%;height:34px;border-radius:6px;background:#e8e8e8;padding:0 12px;font-size:13px;transition:all var(--transition)}
-.search-box input:focus{background:#fff;box-shadow:0 0 0 2px rgba(7,193,96,.2)}
-/* Contact List */
+
+/* ===== Sidebar ===== */
+.sidebar{width:280px;min-width:280px;background:var(--sidebar-bg);display:flex;flex-direction:column;color:#fff}
+.sidebar-header{height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;background:#262626}
+.sidebar-header h3{font-size:17px;font-weight:500;color:#e0e0e0}
+.sidebar-header .my-avatar{width:28px;height:28px;border-radius:2px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.sidebar-tabs{display:flex;flex-shrink:0;background:#1f1f1f}
+.sidebar-tab{flex:1;text-align:center;padding:10px 0;font-size:13px;color:#888;position:relative;cursor:pointer;transition:color var(--transition)}
+.sidebar-tab.active{color:#36ec7a}
+.sidebar-tab .tab-badge{background:#FA5151;color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;margin-left:3px;vertical-align:middle}
+.search-box{padding:8px 12px;flex-shrink:0}
+.search-box input{width:100%;height:28px;border-radius:3px;background:#262626;color:#ccc;padding:0 10px;font-size:12px;border:1px solid #333}
+.search-box input::placeholder{color:#666}
+.search-box input:focus{background:#333;color:#fff}
+
 .contact-list{flex:1;overflow-y:auto}
-.contact-item{display:flex;align-items:center;padding:12px 16px;cursor:pointer;transition:background var(--transition)}
-.contact-item:hover{background:#e8e8e8}
-.contact-item.active{background:#d9d9d9}
-.contact-item .contact-avatar{width:44px;height:44px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;flex-shrink:0;margin-right:12px}
+.contact-item{display:flex;align-items:center;padding:12px 16px;cursor:pointer;transition:background var(--transition);border-bottom:1px solid #252525}
+.contact-item:hover{background:#2a2a2a}
+.contact-item.active{background:#333}
+.contact-item .contact-avatar{width:40px;height:40px;border-radius:4px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;flex-shrink:0;margin-right:12px;position:relative}
 .contact-item .contact-info{flex:1;min-width:0}
-.contact-item .contact-name{font-size:14px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
-.contact-item .contact-last{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-item .contact-name{font-size:14px;color:#e0e0e0;margin-bottom:3px}
+.contact-item .contact-last{font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .contact-item .contact-meta{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:8px}
-.contact-item .contact-time{font-size:11px;color:var(--text3)}
-.contact-item .contact-unread{background:var(--green);color:#fff;font-size:11px;min-width:20px;height:20px;border-radius:10px;display:none;align-items:center;justify-content:center;padding:0 6px;margin-top:3px;font-weight:600}
+.contact-item .contact-time{font-size:11px;color:#666}
+.contact-item .contact-unread{background:var(--green);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 5px;margin-top:3px;font-weight:500}
 .contact-item .contact-unread.show{display:flex}
-.contact-item .online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
-/* Search results */
-.search-result{-webkit-appearance:none;display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0}
-.search-result .result-avatar{width:40px;height:40px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0;margin-right:12px}
+.contact-item .online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* Search results (dark sidebar) */
+.search-result{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #252525;color:#e0e0e0}
+.search-result .result-avatar{width:36px;height:36px;border-radius:3px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;margin-right:12px}
 .search-result .result-info{flex:1}
-.search-result .result-name{font-size:14px;font-weight:500}
-.search-result .result-status{font-size:11px;color:var(--text3);margin-top:2px}
-.btn-add{height:30px;padding:0 14px;border-radius:15px;font-size:12px;font-weight:500;flex-shrink:0;transition:all var(--transition)}
+.search-result .result-name{font-size:14px}
+.search-result .result-status{font-size:11px;color:#666;margin-top:2px}
+.btn-add{height:28px;padding:0 12px;border-radius:3px;font-size:12px;flex-shrink:0}
 .btn-add.add{background:var(--green);color:#fff}
-.btn-add.add:hover{background:var(--green-dark)}
-.btn-add.pending{background:#f0f0f0;color:var(--text2);cursor:default}
-.btn-add.friend{background:#f0f0f0;color:var(--text2);cursor:default}
-/* Friend request */
-.request-card{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0}
-.request-card .req-avatar{width:40px;height:40px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0;margin-right:12px}
+.btn-add.add:active{background:var(--green-dark)}
+.btn-add.pending,.btn-add.friend{background:#333;color:#888;cursor:default}
+
+/* Request card (dark sidebar) */
+.request-card{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #252525;color:#e0e0e0}
+.request-card .req-avatar{width:36px;height:36px;border-radius:3px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;margin-right:12px}
 .request-card .req-info{flex:1}
-.request-card .req-name{font-size:14px;font-weight:500}
-.request-card .req-text{font-size:12px;color:var(--text3);margin-top:2px}
+.request-card .req-name{font-size:14px}
+.request-card .req-text{font-size:11px;color:#666;margin-top:2px}
 .request-card .req-actions{display:flex;gap:8px;flex-shrink:0}
-.btn-accept{background:var(--green);color:#fff;height:30px;padding:0 16px;border-radius:4px;font-size:12px}
-.btn-accept:hover{background:var(--green-dark)}
-.btn-reject{background:#f0f0f0;color:var(--text2);height:30px;padding:0 16px;border-radius:4px;font-size:12px}
-/* Chat area */
-.chat-area{flex:1;display:flex;flex-direction:column;background:var(--bg-chat)}
-.chat-header{height:56px;display:flex;align-items:center;padding:0 16px;background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0}
-.chat-header .chat-avatar{width:36px;height:36px;border-radius:6px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-right:12px}
-.chat-header .chat-title{font-size:16px;font-weight:600}
-.chat-header .chat-subtitle{font-size:12px;color:var(--text2);margin-left:8px}
-.chat-header .header-actions{margin-left:auto;display:flex;align-items:center;gap:4px}
-.btn-video{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--transition)}
-.btn-video:hover{background:#f0f0f0}
-.btn-video svg{width:22px;height:22px;fill:#666}
-.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:2px}
-.message-row{display:flex;margin-bottom:16px;align-items:flex-start;animation:msgIn .25s ease-out}
+.btn-accept{background:var(--green);color:#fff;height:28px;padding:0 14px;border-radius:3px;font-size:12px}
+.btn-accept:active{background:var(--green-dark)}
+.btn-reject{background:#333;color:#888;height:28px;padding:0 14px;border-radius:3px;font-size:12px}
+
+/* Empty state (dark sidebar) */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#555;text-align:center}
+.empty-state svg{width:40px;height:40px;fill:#444;margin-bottom:12px}
+.empty-state p{font-size:13px}
+
+/* ===== Chat Area ===== */
+.chat-area{flex:1;display:flex;flex-direction:column;background:#EDEDED}
+
+/* Chat header */
+.chat-header{height:var(--nav-height);display:flex;align-items:center;padding:0 16px;background:#EDEDED;flex-shrink:0;border-bottom:1px solid #d9d9d9}
+.chat-header .chat-avatar{width:32px;height:32px;border-radius:4px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;margin-right:10px;flex-shrink:0}
+.chat-header .chat-info{flex:1;display:flex;align-items:center}
+.chat-header .chat-title{font-size:17px;font-weight:500}
+.chat-header .chat-subtitle{font-size:11px;color:var(--text2);margin-left:6px}
+.chat-header .header-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.btn-video{width:30px;height:30px;display:flex;align-items:center;justify-content:center;opacity:.7}
+.btn-video:active{opacity:1}
+.btn-video svg{width:20px;height:20px;fill:#000}
+
+/* Chat messages */
+.chat-messages{flex:1;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column}
+.message-row{display:flex;margin-bottom:18px;align-items:flex-start}
 .message-row.self{flex-direction:row-reverse}
-.message-row .msg-avatar{width:34px;height:34px;border-radius:4px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.message-row .msg-body{max-width:60%;display:flex;flex-direction:column}
-.message-row.self .msg-body{align-items:flex-end;margin-right:10px}
-.message-row.other .msg-body{margin-left:10px;align-items:flex-start}
-.message-row .msg-bubble{padding:10px 14px;font-size:14px;line-height:1.5;word-break:break-word;border-radius:8px}
-.message-row.self .msg-bubble{background:var(--bubble-self);border-top-right-radius:2px}
-.message-row.other .msg-bubble{background:#fff;border-top-left-radius:2px;box-shadow:0 1px 1px rgba(0,0,0,.05)}
-.message-row .msg-time{font-size:11px;color:var(--text3);margin-top:4px}
-.message-row.system{justify-content:center;margin:10px 0}
-.message-row.system .msg-system-text{font-size:12px;color:var(--text3);background:rgba(0,0,0,.05);padding:4px 12px;border-radius:4px}
-@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.typing-indicator{padding:2px 20px 8px;font-size:12px;color:var(--text2);display:none;animation:typingPulse 1.5s infinite}
+.message-row .msg-avatar{width:34px;height:34px;border-radius:2px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.message-row .msg-body{max-width:66%;display:flex;flex-direction:column}
+.message-row.self .msg-body{align-items:flex-end;margin-right:8px}
+.message-row.other .msg-body{margin-left:8px;align-items:flex-start}
+.message-row .msg-bubble{padding:8px 12px;font-size:15px;line-height:1.45;word-break:break-word;position:relative}
+.message-row.self .msg-bubble{background:var(--bubble-self);border-radius:4px}
+.message-row.other .msg-bubble{background:var(--bubble-other);border-radius:4px;border:1px solid #e0e0e0}
+.message-row .msg-time{font-size:10px;color:var(--text3);margin-top:2px}
+.message-row.system{justify-content:center;margin:8px 0}
+.message-row.system .msg-system-text{font-size:11px;color:#b0b0b0}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.message-row{animation:msgIn .2s ease-out}
+
+/* Typing */
+.typing-indicator{padding:4px 20px;font-size:12px;color:var(--text2);display:none}
 .typing-indicator.show{display:block}
-@keyframes typingPulse{0%,100%{opacity:.4}50%{opacity:1}}
-.chat-input-bar{background:var(--bg-white);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:flex-end;gap:10px;flex-shrink:0}
-.chat-input-bar .input-tool{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--transition);flex-shrink:0}
-.chat-input-bar .input-tool:hover{background:#f0f0f0}
-.chat-input-bar .input-tool svg{width:24px;height:24px;fill:#666}
-.chat-input-bar textarea{flex:1;height:40px;max-height:120px;border:none;resize:none;font-size:14px;line-height:1.5;padding:6px 0;background:transparent;font-family:var(--font)}
+
+/* Chat input bar */
+.chat-input-bar{background:#f7f7f7;border-top:.5px solid #d6d6d6;padding:8px 12px;display:flex;align-items:flex-end;gap:8px;flex-shrink:0}
+.chat-input-bar .input-tool{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6}
+.chat-input-bar .input-tool:active{opacity:1}
+.chat-input-bar .input-tool svg{width:22px;height:22px;fill:#111}
+.chat-input-bar textarea{flex:1;height:36px;max-height:100px;border:none;resize:none;font-size:15px;line-height:1.4;padding:4px 0;background:transparent;font-family:var(--font)}
 .chat-input-bar textarea::placeholder{color:var(--text3)}
-.chat-input-bar .btn-send{width:80px;height:36px;background:var(--green);color:#fff;border-radius:6px;font-size:13px;font-weight:500;flex-shrink:0}
-.chat-input-bar .btn-send:hover{background:var(--green-dark)}
-.chat-input-bar .btn-send:active{transform:scale(.95)}
-.chat-input-bar .btn-send:disabled{background:#ccc;cursor:not-allowed;transform:none}
-.emoji-picker{display:none;background:var(--bg-white);border-top:1px solid var(--border);padding:12px;flex-shrink:0;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto}
+.chat-input-bar .btn-send{height:32px;padding:0 20px;background:var(--green);color:#fff;border-radius:4px;font-size:14px;flex-shrink:0;letter-spacing:1px}
+.chat-input-bar .btn-send:active{background:var(--green-dark)}
+.chat-input-bar .btn-send:disabled{background:#ddd;color:#bbb;cursor:default}
+
+/* Emoji */
+.emoji-picker{display:none;background:#f7f7f7;border-top:.5px solid #d6d6d6;padding:10px 12px;flex-shrink:0;flex-wrap:wrap;gap:5px;max-height:220px;overflow-y:auto}
 .emoji-picker.show{display:flex}
-.emoji-picker .emoji-item{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border-radius:6px}
-.emoji-picker .emoji-item:hover{background:#f5f5f5}
+.emoji-picker .emoji-item{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border-radius:4px}
+.emoji-picker .emoji-item:active{background:#e0e0e0}
+
 /* Welcome */
-.welcome-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-chat);color:var(--text3)}
-.welcome-screen svg{width:80px;height:80px;fill:#d0d0d0;margin-bottom:16px}
-.welcome-screen h3{font-size:18px;font-weight:500;color:#999}
+.welcome-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#EDEDED;color:var(--text3)}
+.welcome-screen svg{width:64px;height:64px;fill:#d6d6d6;margin-bottom:16px}
+.welcome-screen h3{font-size:17px;font-weight:400;color:#aaa}
+
 /* Toast */
-.toast{position:fixed;top:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;padding:8px 20px;border-radius:4px;font-size:13px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.show{opacity:1}
+
 /* Video call */
-.video-call-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9990;flex-direction:column;align-items:center;justify-content:center}
+.video-call-overlay{display:none;position:fixed;inset:0;background:#000;z-index:9990;flex-direction:column;align-items:center;justify-content:center}
 .video-call-overlay.active{display:flex}
-.video-call-overlay .call-info{color:#fff;font-size:18px;margin-bottom:16px;text-align:center}
-.video-call-overlay .call-sub{color:#aaa;font-size:13px;margin-top:6px;animation:typingPulse 2s infinite}
-.video-call-overlay .videos{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;max-width:90vw}
-.video-call-overlay video{width:320px;max-width:45vw;border-radius:12px;background:#222;object-fit:cover}
-.video-call-overlay video#localVideo{width:160px;position:absolute;bottom:20px;right:20px;border-radius:10px;border:2px solid rgba(255,255,255,.3);z-index:1}
-.call-actions{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:20px}
-.call-actions button{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all var(--transition)}
-.call-actions button svg{width:28px;height:28px;fill:#fff}
+.video-call-overlay .call-info{color:#fff;font-size:16px;margin-bottom:12px;text-align:center}
+.video-call-overlay .call-sub{color:#888;font-size:12px;margin-top:4px}
+.video-call-overlay .videos{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;max-width:90vw}
+.video-call-overlay video{width:300px;max-width:42vw;border-radius:8px;background:#1a1a1a;object-fit:cover}
+.video-call-overlay video#localVideo{width:120px;position:absolute;bottom:80px;right:16px;border-radius:6px;border:2px solid rgba(255,255,255,.25);z-index:1}
+.call-actions{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;gap:24px}
+.call-actions button{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.call-actions button svg{width:24px;height:24px;fill:#fff}
 .btn-hangup{background:#FA5151}
-.btn-hangup:hover{background:#d43d3d}
+.btn-hangup:active{background:#d43d3d}
 .btn-mute{background:rgba(255,255,255,.2)}
 .btn-mute.muted{background:#fff}
 .btn-mute.muted svg{fill:#333}
-/* Incoming call toast */
-.incoming-call{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#fff;border-radius:16px;padding:24px 32px;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:9980;display:none;text-align:center}
+
+/* Incoming call */
+.incoming-call{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:28px 36px;box-shadow:0 8px 40px rgba(0,0,0,.25);z-index:9980;display:none;text-align:center}
 .incoming-call.show{display:block}
-.incoming-call .incoming-name{font-size:18px;font-weight:600;margin-bottom:4px}
-.incoming-call .incoming-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
-.incoming-call .incoming-actions{display:flex;gap:16px;justify-content:center}
-.incoming-call .btn-accept-call{width:56px;height:56px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center}
-.incoming-call .btn-reject-call{width:56px;height:56px;border-radius:50%;background:#FA5151;display:flex;align-items:center;justify-content:center}
-.incoming-call svg{width:28px;height:28px;fill:#fff}
+.incoming-call .incoming-name{font-size:17px;font-weight:500;margin-bottom:4px}
+.incoming-call .incoming-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.incoming-call .incoming-actions{display:flex;gap:20px;justify-content:center}
+.incoming-call .btn-accept-call{width:52px;height:52px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center}
+.incoming-call .btn-reject-call{width:52px;height:52px;border-radius:50%;background:#FA5151;display:flex;align-items:center;justify-content:center}
+.incoming-call svg{width:26px;height:26px;fill:#fff}
+
 /* Tab panels */
 .tab-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
 .tab-panel.active{display:flex}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text3);text-align:center}
-.empty-state svg{width:48px;height:48px;fill:#d0d0d0;margin-bottom:12px}
-.empty-state p{font-size:13px}
+
+/* ===== Bottom Tab Bar (Mobile) ===== */
+.mobile-tabbar{display:none;height:var(--tab-height);background:#f7f7f7;border-top:.5px solid #d6d6d6;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0)}
+.mobile-tabbar .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text2)}
+.mobile-tabbar .tab-item.active{color:var(--green)}
+.mobile-tabbar .tab-item svg{width:24px;height:24px;fill:currentColor}
+.mobile-tabbar .tab-item span{font-size:10px}
+.mobile-tabbar .tab-item .tab-dot{position:relative}
+.mobile-tabbar .tab-item .tab-dot::after{content:'';position:absolute;top:-1px;right:-6px;width:7px;height:7px;background:#FA5151;border-radius:50%;display:none}
+.mobile-tabbar .tab-item .tab-dot.has-badge::after{display:block}
+
 /* Responsive */
 @media(max-width:768px){
   .sidebar{width:100%;min-width:100%}
-  .chat-area{display:none;position:fixed;inset:0}
-  .chat-area.mobile-active{display:flex;z-index:50}
+  .sidebar-header{height:var(--nav-height);padding-top:env(safe-area-inset-top,0)}
+  .app{flex-direction:column}
+  .chat-area{display:none;position:fixed;inset:0;z-index:50;padding-bottom:var(--tab-height);padding-bottom:calc(var(--tab-height) + env(safe-area-inset-bottom, 0))}
+  .chat-area.mobile-active{display:flex}
   .sidebar.mobile-hidden{display:none}
-  .chat-header .btn-back{display:flex!important;width:32px;height:32px;align-items:center;justify-content:center;margin-right:8px}
+  .chat-header .btn-back{display:flex!important;width:32px;height:32px;align-items:center;justify-content:center;margin-right:4px}
+  .mobile-tabbar{display:flex}
+  .chat-header{padding-top:env(safe-area-inset-top,0)}
+  .welcome-screen{padding-bottom:var(--tab-height)}
+  .chat-messages{padding-bottom:8px}
 }
-@media(min-width:769px){.chat-header .btn-back{display:none}}
+@media(min-width:769px){
+  .chat-header .btn-back{display:none}
+  .mobile-tabbar{display:none}
+}
 </style>
 </head>
 <body>
 
-<!-- 登录 -->
+<!-- ===== 登录 ===== -->
 <div class="login-container" id="loginScreen">
   <div class="login-card">
-    <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></div>
-    <h2>Chat</h2>
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.54 0 3-.35 4.3-.97l3.12 1.56c.48.24 1.04-.16.88-.67l-.5-2.84C21.42 17.45 22 15.32 22 13c0-6.07-4.48-11-10-11z"/><circle cx="8.5" cy="11" r="1.5"/><circle cx="15.5" cy="11" r="1.5"/></svg></div>
+    <h2>微信</h2>
     <p>加好友 · 聊天 · 视频通话</p>
     <div class="input-group">
-      <label>你的昵称</label>
-      <input type="text" id="nicknameInput" placeholder="请输入你的昵称" maxlength="20" autocomplete="off">
+      <label>昵称</label>
+      <input type="text" id="nicknameInput" placeholder="输入你的昵称" maxlength="20" autocomplete="off">
     </div>
-    <button class="btn-login" onclick="login()">进入聊天</button>
-    <p class="hint">💡 搜索好友名字，加好友后就能聊天和视频通话</p>
+    <button class="btn-login" onclick="login()">进入微信</button>
+    <p class="hint">搜索好友名字，加好友后就能聊天</p>
   </div>
 </div>
 
-<!-- 主界面 -->
+<!-- ===== 主界面 ===== -->
 <div class="app" id="app">
+  <!-- 侧边栏 -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        <h3>Chat</h3>
-      </div>
-      <div class="my-avatar" id="myAvatarSmall">我</div>
+      <h3>微信</h3>
+      <div class="my-avatar" id="myAvatarSmall"></div>
     </div>
-    <!-- 标签切换 -->
     <div class="sidebar-tabs">
       <div class="sidebar-tab active" data-tab="messages" onclick="switchTab('messages')">消息</div>
       <div class="sidebar-tab" data-tab="contacts" onclick="switchTab('contacts')">通讯录</div>
       <div class="sidebar-tab" data-tab="requests" onclick="switchTab('requests')">新的朋友<span class="tab-badge" id="requestBadge" style="display:none">0</span></div>
     </div>
+
     <!-- 消息面板 -->
     <div class="tab-panel active" id="panel-messages">
-      <div class="search-box">
-        <input type="text" placeholder="🔍 搜索好友" id="friendSearchInput" oninput="filterFriends()">
-      </div>
+      <div class="search-box"><input type="text" placeholder="搜索" id="friendSearchInput" oninput="filterFriends()"></div>
       <div class="contact-list" id="friendList"></div>
     </div>
     <!-- 通讯录面板 -->
     <div class="tab-panel" id="panel-contacts">
-      <div class="search-box">
-        <input type="text" placeholder="🔍 搜索用户，加好友" id="userSearchInput" oninput="searchUsers()">
-      </div>
+      <div class="search-box"><input type="text" placeholder="搜索" id="userSearchInput" oninput="searchUsers()"></div>
       <div id="searchResults"></div>
       <div class="empty-state" id="contactEmpty">
-        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <p>输入昵称搜索用户，添加好友</p>
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1016 9.5a6.5 6.5 0 00-1.57 4.23l.27.28v.79l5 4.99L20.49 19l-5-5z"/></svg>
+        <p>搜索用户，添加好友</p>
       </div>
     </div>
     <!-- 好友请求面板 -->
     <div class="tab-panel" id="panel-requests">
       <div id="requestList"></div>
       <div class="empty-state" id="requestEmpty">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         <p>暂无好友请求</p>
       </div>
     </div>
   </aside>
 
+  <!-- 聊天区域 -->
   <main class="chat-area" id="chatArea">
     <div class="welcome-screen" id="welcomeScreen">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
       <h3>选择好友开始聊天</h3>
     </div>
     <div id="chatView" style="display:none;flex:1;display:flex;flex-direction:column;">
       <div class="chat-header">
-        <button class="btn-back" onclick="goBack()">
-          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#333" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        <button class="btn-back" onclick="goBack()" aria-label="返回">
+          <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#111" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </button>
         <div class="chat-avatar" id="chatAvatar">?</div>
-        <div>
-          <div class="chat-title" id="chatTitle"></div>
-          <div class="chat-subtitle" id="chatSubtitle"></div>
+        <div class="chat-info">
+          <span class="chat-title" id="chatTitle"></span>
+          <span class="chat-subtitle" id="chatSubtitle"></span>
         </div>
         <div class="header-actions">
           <button class="btn-video" onclick="startCall()" title="视频通话" id="btnVideoCall">
@@ -265,19 +302,37 @@ input{font-family:inherit;outline:none;border:none}
       <div class="emoji-picker" id="emojiPicker"></div>
       <div class="chat-input-bar">
         <button class="input-tool" onclick="toggleEmoji()" title="表情">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#666" stroke-width="1.5"/><circle cx="9" cy="10" r="1" fill="#666"/><circle cx="15" cy="10" r="1" fill="#666"/><path d="M8 14c1.2 1.8 3.4 2.5 4 2.5s2.8-.7 4-2.5" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#111" stroke-width="1.5"/><circle cx="9" cy="10" r="1.2"/><circle cx="15" cy="10" r="1.2"/><path d="M8 14.5c1.2 1.5 3 2 4 2s2.8-.5 4-2" fill="none" stroke="#111" stroke-width="1.3" stroke-linecap="round"/></svg>
         </button>
-        <textarea id="messageInput" placeholder="输入消息..." rows="1" onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
+        <textarea id="messageInput" placeholder="" rows="1" onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
         <button class="btn-send" id="btnSend" onclick="sendMessage()" disabled>发送</button>
       </div>
     </div>
   </main>
+
+  <!-- 移动端底部导航 -->
+  <nav class="mobile-tabbar">
+    <div class="tab-item active" onclick="switchTab('messages')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      <span>消息</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('contacts')">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <span>通讯录</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('requests')">
+      <div class="tab-dot" id="tabDot">
+        <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <span>新的朋友</span>
+    </div>
+  </nav>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- 来电提示 -->
+<!-- 来电 -->
 <div class="incoming-call" id="incomingCall">
   <div class="incoming-name" id="incomingName"></div>
   <div class="incoming-sub">视频通话邀请</div>
@@ -289,16 +344,13 @@ input{font-family:inherit;outline:none;border:none}
 
 <!-- 视频通话 -->
 <div class="video-call-overlay" id="videoCallOverlay">
-  <div class="call-info">
-    <div id="callPeerName"></div>
-    <div class="call-sub" id="callStatus">正在连接...</div>
-  </div>
+  <div class="call-info"><div id="callPeerName"></div><div class="call-sub" id="callStatus">正在连接...</div></div>
   <div class="videos">
     <video id="remoteVideo" autoplay playsinline></video>
     <video id="localVideo" autoplay playsinline muted></video>
   </div>
   <div class="call-actions">
-    <button class="btn-mute" id="btnMute" onclick="toggleMute()"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+    <button class="btn-mute" id="btnMute" onclick="toggleMute()"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
     <button class="btn-hangup" onclick="endCall()"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" transform="rotate(135,12,12)"/></svg></button>
   </div>
 </div>
