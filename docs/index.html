@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Chat</title></head>
+<body style="text-align:center;padding-top:40vh;font-family:sans-serif;color:#666">
+<p>正在连接聊天服务器...</p>
+<script>
+const URLS = ["https://involving-biggest-missed-represents.trycloudflare.com","https://2ec3a2ef4e925ba1-43-143-220-90.serveousercontent.com","https://2e71394a7c3e51.lhr.life"];
+let idx = 0;
+function tryNext() {
+  if (idx >= URLS.length) {
+    document.body.innerHTML = '<p style="color:#c00">所有服务器暂时不可用，请稍后重试</p><p><button onclick="location.reload()">重试</button></p>';
+    return;
+  }
+  const url = URLS[idx++];
+  fetch(url, {mode:'no-cors'}).then(() => { window.location.href = url; }).catch(tryNext);
+}
+tryNext();
+</script>
+</body></html>
