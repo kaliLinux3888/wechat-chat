@@ -113,6 +113,8 @@ start_node
 start_tunnel
 start_serveo
 start_lhr
+# 更新 GitHub Pages 重定向
+bash "$PROJECT_DIR/update_redirect.sh" &
 
 while true; do
   start_node
