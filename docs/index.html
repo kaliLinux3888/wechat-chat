@@ -1,18 +1,28 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Chat</title></head>
-<body style="text-align:center;padding-top:40vh;font-family:sans-serif;color:#666">
-<p>正在连接聊天服务器...</p>
+<html><head><meta charset="UTF-8"><title>Chat - 正在连接</title>
+<style>body{text-align:center;padding-top:40vh;font-family:-apple-system,sans-serif;color:#333;background:#f5f5f5}h2{font-size:20px;font-weight:500}p{font-size:14px;color:#888;margin-top:8px}</style></head>
+<body>
+<h2 id="status">正在连接聊天服务器...</h2><p id="info"></p>
 <script>
 const URLS = ["https://involving-biggest-missed-represents.trycloudflare.com","https://2ec3a2ef4e925ba1-43-143-220-90.serveousercontent.com","https://2e71394a7c3e51.lhr.life"];
-let idx = 0;
-function tryNext() {
-  if (idx >= URLS.length) {
-    document.body.innerHTML = '<p style="color:#c00">所有服务器暂时不可用，请稍后重试</p><p><button onclick="location.reload()">重试</button></p>';
-    return;
-  }
-  const url = URLS[idx++];
-  fetch(url, {mode:'no-cors'}).then(() => { window.location.href = url; }).catch(tryNext);
+let idx = 0, deadline = Date.now() + 15000;
+function probe(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = img.onerror = () => resolve(true); // any response = server up
+    setTimeout(() => resolve(false), 3000);
+    img.src = url + '/favicon.svg?' + Date.now();
+  });
 }
-tryNext();
+(async () => {
+  while (idx < URLS.length && Date.now() < deadline) {
+    const url = URLS[idx++];
+    document.getElementById('info').textContent = '尝试: ' + new URL(url).hostname;
+    const alive = await probe(url);
+    if (alive) { document.getElementById('status').textContent = '已连接！跳转中...'; window.location.replace(url); return; }
+  }
+  document.getElementById('status').textContent = '服务器暂不可用';
+  document.getElementById('info').innerHTML = '<button onclick="location.reload()" style="padding:10px 24px;font-size:14px;border-radius:6px;border:1px solid #ccc;cursor:pointer;margin-top:12px">重试连接</button>';
+})();
 </script>
 </body></html>
