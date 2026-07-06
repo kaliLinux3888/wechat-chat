@@ -2,8 +2,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+// V4_CHANGE: 引入 JWT 实现有状态身份，解决 nickname 重复冲突和重连身份丢失
+const jwt = require('jsonwebtoken');
 
 const PORT = process.env.PORT || 3000;
+// V4_CHANGE: JWT 签名密钥，生产环境应通过环境变量注入
+const JWT_SECRET = process.env.JWT_SECRET || 'wechat-chat-jwt-secret-2026';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
@@ -224,6 +228,20 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+// V4_CHANGE: 从 query 或 body 中提取并校验 JWT，返回 userId 或 null
+function verifyToken(req, query, body) {
+  const tk = query.token || (body && body.token) || '';
+  if (!tk) return null;
+  try {
+    const decoded = jwt.verify(tk, JWT_SECRET);
+    // V4_CHANGE: 校验用户确实存在（防止已删除用户的 token 仍然有效）
+    if (!users.has(decoded.userId)) return null;
+    return decoded.userId;
+  } catch (e) {
+    return null;
+  }
+}
+
 function serveStatic(req, res, pathname) {
   let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
   const safePath = path.normalize(filePath);
@@ -247,34 +265,51 @@ function serveStatic(req, res, pathname) {
 // ── 路由处理 ──────────────────────────────────────────────
 async function handleApi(req, res, pathname, query) {
   // ── 登录 ──
+  // V4_CHANGE: 签发 JWT token，userId 由服务端分配（UUID），解决同名冲突和重连身份问题
   if (pathname === '/api/login' && req.method === 'POST') {
     const body = await readBody(req);
     const nickname = (body.nickname || '').trim() || '微信用户';
     let userId = body.userId;
     let user;
+    // V4_CHANGE: 检查前端传来的 token，如果有效则复用旧用户（刷新页面恢复身份）
+    let existingUserId = null;
+    if (body.token) {
+      existingUserId = verifyToken(req, query, body);
+    }
 
-    if (userId && users.has(userId)) {
+    if (existingUserId && users.has(existingUserId)) {
+      // V4_CHANGE: token 有效 → 复用旧身份，更新昵称
+      userId = existingUserId;
+      user = users.get(userId);
+      user.nickname = nickname;
+    } else if (userId && users.has(userId)) {
+      // V4_CHANGE: 兜底：localStorage 中的 userId 匹配服务端记录（无 token 时）
       user = users.get(userId);
       user.nickname = nickname;
     } else {
+      // V4_CHANGE: 全新用户，分配 UUID
       userId = genUserId();
       user = { id: userId, nickname, avatarColor: pickColor(), online: false, lastSeen: Date.now() };
       users.set(userId, user);
       eventQueues.set(userId, []);
     }
-    // 登录即标记在线（建立首次轮询前先置位）
     setUserOnline(userId);
+    // V4_CHANGE: 签发 JWT，payload 包含 userId，有效期 30 天
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
     console.log(`[登录] ${user.nickname} (${userId})`);
     scheduleSave();
-    sendJson(res, 200, { ok: true, user: { id: user.id, nickname: user.nickname, avatarColor: user.avatarColor } });
+    sendJson(res, 200, { ok: true, user: { id: user.id, nickname: user.nickname, avatarColor: user.avatarColor }, token });
     return;
   }
 
   // ── 轮询：拉取增量事件 ──
   if (pathname === '/api/poll' && req.method === 'GET') {
+    // V4_CHANGE: token 校验替代原先的 userId 参数直接信任
+    const authUserId = verifyToken(req, query, null);
     const userId = query.userId;
-    const sinceSeq = parseInt(query.since) || 0;
+    if (!authUserId || authUserId !== userId) { sendJson(res, 401, { error: 'token无效或已过期' }); return; }
     if (!users.has(userId)) { sendJson(res, 401, { error: '未登录' }); return; }
+    const sinceSeq = parseInt(query.since) || 0;
 
     // 心跳：标记在线
     setUserOnline(userId);

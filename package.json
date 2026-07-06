@@ -7,5 +7,7 @@
     "start": "node server.js",
     "keepalive": "./keepalive.sh"
   },
-  "dependencies": {}
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3"
+  }
 }
