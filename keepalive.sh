@@ -6,7 +6,8 @@ PID_FILE="$PROJECT_DIR/server.pid"
 TUNNEL_PID_FILE="$PROJECT_DIR/tunnel.pid"
 TUNNEL_URL_FILE="$PROJECT_DIR/tunnel.url"
 SERVEO_PID_FILE="$PROJECT_DIR/serveo.pid"
-SERVEO_URL_FILE="$PROJECT_DIR/serveo.url"
+LHR_PID_FILE="$PROJECT_DIR/lhr.pid"
+LHR_URL_FILE="$PROJECT_DIR/lhr.url"
 HEALTH_INTERVAL=5
 CLOUDFLARED="/tmp/cloudflared"
 SSH_KEY="$HOME/.ssh/serveo_key"
@@ -88,14 +89,35 @@ start_serveo() {
   return 1
 }
 
+start_lhr() {
+  if [ -f "$LHR_PID_FILE" ]; then
+    LPID=$(cat "$LHR_PID_FILE" 2>/dev/null)
+    if ps -p "$LPID" > /dev/null 2>&1; then return 0; fi
+  fi
+  log "启动 localhost.run 隧道..."
+  ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ConnectTimeout=15 \
+    -R "80:localhost:3000" nokey@localhost.run \
+    > "$PROJECT_DIR/lhr.log" 2>&1 &
+  echo $! > "$LHR_PID_FILE"
+  for i in {1..10}; do
+    sleep 2
+    URL=$(grep -oP 'https://[a-z0-9]+\.lhr\.life' "$PROJECT_DIR/lhr.log" 2>/dev/null | head -1)
+    if [ -n "$URL" ]; then echo "$URL" > "$LHR_URL_FILE"; log "LHR隧道: $URL"; return 0; fi
+  done
+  log "LHR超时"
+  return 1
+}
+
 log "===== 聊天服务启动 ====="
 start_node
 start_tunnel
 start_serveo
+start_lhr
 
 while true; do
   start_node
   start_tunnel
   start_serveo
+  start_lhr
   sleep "$HEALTH_INTERVAL"
 done
